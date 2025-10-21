@@ -1,22 +1,30 @@
 """
-Examples demonstrating intelligent mocking with autospec and pytest-mock.
+Exemplo demonstrando o uso de mocks com create_autospec().
 
-Uses create_autospec() to create type-safe mocks that match port interfaces,
-avoiding manual mock classes and reducing boilerplate.
+Note que o teste só depende da implementação do serviço. As implementações de 
+repositórios e adaptadores são simuladas, e passamos as respostas que esperamos 
+dessas funções que não estão sendo testadas no próprio teste. Dessa maneira,
+isolamos as preocupações do teste, que passa a verificar apenas o service.
+Isso faz o teste ficar mais específico, fácil de escrever e fácil de debugar. 
+Principalmente conforme o código cresce.
 """
 
 import pytest
 from datetime import datetime
-from unittest.mock import create_autospec
+from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock, create_autospec
 
 from src.core.models.user import User
 from src.core.ports.user_repository import UserRepository
 from src.core.ports.trip_repository import TripRepository
 from src.core.services.trip_service import TripService
 
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
+
 
 @pytest.mark.asyncio
-async def test_create_trip_calculates_score_correctly():
+async def test_create_trip_calculates_score_correctly() -> None:
     """Test score calculation with autospecced mocks."""
     # Arrange
     user_repo = create_autospec(UserRepository, instance=True)
@@ -28,10 +36,11 @@ async def test_create_trip_calculates_score_correctly():
         score=0,
         password="hashed_password",
     )
-    user_repo.get_user_by_email.return_value = test_user
-    trip_repo.save_trip.side_effect = lambda t: t
+    user_repo.get_user_by_email = AsyncMock(return_value=test_user)
+    user_repo.add_user_score = AsyncMock(return_value=test_user)
+    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)  # type: ignore[misc]
 
-    service = TripService(trip_repo, user_repo)
+    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
 
     # Act
     trip = await service.create_trip(
@@ -53,7 +62,7 @@ async def test_create_trip_calculates_score_correctly():
 
 
 @pytest.mark.asyncio
-async def test_create_trip_with_pytest_mock(mocker):
+async def test_create_trip_with_pytest_mock(mocker: "MockerFixture") -> None:
     """Test using pytest-mock fixture for cleaner syntax."""
     # Arrange
     user_repo = mocker.create_autospec(UserRepository, instance=True)
@@ -65,10 +74,11 @@ async def test_create_trip_with_pytest_mock(mocker):
         score=0,
         password="secure_hash",
     )
-    user_repo.get_user_by_email.return_value = test_user
-    trip_repo.save_trip.side_effect = lambda t: t
+    user_repo.get_user_by_email = AsyncMock(return_value=test_user)
+    user_repo.add_user_score = AsyncMock(return_value=test_user)
+    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)  # type: ignore[misc]
 
-    service = TripService(trip_repo, user_repo)
+    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
 
     # Act
     trip = await service.create_trip(
@@ -81,18 +91,21 @@ async def test_create_trip_with_pytest_mock(mocker):
 
     # Assert
     assert trip.score == 25
-    user_repo.add_user_score.assert_awaited_once_with("alice@example.com", 25)
+    user_repo.add_user_score.assert_awaited_once_with("alice@example.com", 25)  # type: ignore[attr-defined]
 
 
 @pytest.mark.asyncio
-async def test_create_trip_fails_for_nonexistent_user(mocker):
+async def test_create_trip_fails_for_nonexistent_user(mocker: "MockerFixture") -> None:
     """Test error handling when user doesn't exist."""
     # Arrange
     user_repo = mocker.create_autospec(UserRepository, instance=True)
     trip_repo = mocker.create_autospec(TripRepository, instance=True)
 
-    user_repo.get_user_by_email.return_value = None
-    service = TripService(trip_repo, user_repo)
+    user_repo.get_user_by_email = AsyncMock(return_value=None)
+    user_repo.add_user_score = AsyncMock()
+    trip_repo.save_trip = AsyncMock()
+
+    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
 
     # Act & Assert
     with pytest.raises(ValueError, match="not found"):
@@ -104,13 +117,13 @@ async def test_create_trip_fails_for_nonexistent_user(mocker):
             trip_date=datetime.now(),
         )
 
-    user_repo.get_user_by_email.assert_awaited_once_with("ghost@example.com")
-    trip_repo.save_trip.assert_not_awaited()
-    user_repo.add_user_score.assert_not_awaited()
+    user_repo.get_user_by_email.assert_awaited_once_with("ghost@example.com")  # type: ignore[attr-defined]
+    trip_repo.save_trip.assert_not_awaited()  # type: ignore[attr-defined]
+    user_repo.add_user_score.assert_not_awaited()  # type: ignore[attr-defined]
 
 
 @pytest.mark.asyncio
-async def test_multiple_trips(mocker):
+async def test_multiple_trips(mocker: "MockerFixture") -> None:
     """Test multiple sequential calls to the service."""
     # Arrange
     user_repo = mocker.create_autospec(UserRepository, instance=True)
@@ -122,10 +135,11 @@ async def test_multiple_trips(mocker):
         score=0,
         password="hash",
     )
-    user_repo.get_user_by_email.return_value = test_user
-    trip_repo.save_trip.side_effect = lambda t: t
+    user_repo.get_user_by_email = AsyncMock(return_value=test_user)
+    user_repo.add_user_score = AsyncMock(return_value=test_user)
+    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)  # type: ignore[misc]
 
-    service = TripService(trip_repo, user_repo)
+    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
 
     # Act
     trip1 = await service.create_trip(
@@ -147,14 +161,14 @@ async def test_multiple_trips(mocker):
     # Assert
     assert trip1.score == 5
     assert trip2.score == 15
-    assert trip_repo.save_trip.await_count == 2
-    assert user_repo.add_user_score.await_count == 2
-    user_repo.add_user_score.assert_any_await("bob@example.com", 5)
-    user_repo.add_user_score.assert_any_await("bob@example.com", 15)
+    assert trip_repo.save_trip.await_count == 2  # type: ignore[attr-defined]
+    assert user_repo.add_user_score.await_count == 2  # type: ignore[attr-defined]
+    user_repo.add_user_score.assert_any_await("bob@example.com", 5)  # type: ignore[attr-defined]
+    user_repo.add_user_score.assert_any_await("bob@example.com", 15)  # type: ignore[attr-defined]
 
 
 @pytest.mark.asyncio
-async def test_handles_repository_save_error(mocker):
+async def test_handles_repository_save_error(mocker: "MockerFixture") -> None:
     """Test error handling when repository fails."""
     # Arrange
     user_repo = mocker.create_autospec(UserRepository, instance=True)
@@ -166,10 +180,13 @@ async def test_handles_repository_save_error(mocker):
         score=0,
         password="hash",
     )
-    user_repo.get_user_by_email.return_value = test_user
-    trip_repo.save_trip.side_effect = RuntimeError("Database connection lost!")
+    user_repo.get_user_by_email = AsyncMock(return_value=test_user)
+    user_repo.add_user_score = AsyncMock()
+    trip_repo.save_trip = AsyncMock(
+        side_effect=RuntimeError("Database connection lost!")
+    )
 
-    service = TripService(trip_repo, user_repo)
+    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
 
     # Act & Assert
     with pytest.raises(RuntimeError, match="Database connection lost"):
@@ -181,5 +198,5 @@ async def test_handles_repository_save_error(mocker):
             trip_date=datetime.now(),
         )
 
-    trip_repo.save_trip.assert_awaited_once()
-    user_repo.add_user_score.assert_not_awaited()
+    trip_repo.save_trip.assert_awaited_once()  # type: ignore[attr-defined]
+    user_repo.add_user_score.assert_not_awaited()  # type: ignore[attr-defined]
