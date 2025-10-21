@@ -14,7 +14,9 @@ from ..schemas import UserCreateAccountRequest, UserLoginRequest, UserResponse
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_user(
     request: UserCreateAccountRequest,
     user_service: UserService = Depends(),
@@ -47,7 +49,7 @@ async def create_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
 @router.post("/login", response_model=UserResponse)

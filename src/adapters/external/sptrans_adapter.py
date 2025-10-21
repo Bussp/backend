@@ -6,7 +6,6 @@ with the SPTrans API.
 """
 
 from datetime import datetime
-from typing import List
 
 import httpx
 
@@ -47,7 +46,7 @@ class SpTransAdapter(BusProviderPort):
         """
         try:
             response = await self.client.post(
-                f"/Login/Autenticar", params={"token": self.api_token}
+                "/Login/Autenticar", params={"token": self.api_token}
             )
 
             if response.status_code == 200 and response.text == "true":
@@ -62,8 +61,8 @@ class SpTransAdapter(BusProviderPort):
             return False
 
     async def get_bus_positions(
-        self, routes: List[RouteIdentifier]
-    ) -> List[BusPosition]:
+        self, routes: list[RouteIdentifier]
+    ) -> list[BusPosition]:
         """
         Get real-time positions for specified bus routes.
 
@@ -79,7 +78,7 @@ class SpTransAdapter(BusProviderPort):
         if not self.session_token:
             raise RuntimeError("Not authenticated. Call authenticate() first.")
 
-        positions: List[BusPosition] = []
+        positions: list[BusPosition] = []
 
         # For each route, query the API
         for route in routes:
@@ -87,7 +86,7 @@ class SpTransAdapter(BusProviderPort):
                 # SPTrans API expects: /Posicao/Linha?codigoLinha={line_code}
                 # In a real implementation, you'd need to map bus_line to line code
                 response = await self.client.get(
-                    f"/Posicao/Linha", params={"codigoLinha": route.bus_line}
+                    "/Posicao/Linha", params={"codigoLinha": route.bus_line}
                 )
 
                 if response.status_code == 200:
@@ -139,7 +138,7 @@ class SpTransAdapter(BusProviderPort):
         try:
             # SPTrans API: /Linha/Buscar?termosBusca={search_term}
             response = await self.client.get(
-                f"/Linha/Buscar", params={"termosBusca": route.bus_line}
+                "/Linha/Buscar", params={"termosBusca": route.bus_line}
             )
 
             if response.status_code == 200:
@@ -156,7 +155,7 @@ class SpTransAdapter(BusProviderPort):
             raise ValueError(f"Route {route.bus_line} not found")
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get route details: {e}")
+            raise RuntimeError(f"Failed to get route details: {e}") from e
 
     async def close(self) -> None:
         """Close the HTTP client."""

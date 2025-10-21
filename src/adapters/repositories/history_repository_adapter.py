@@ -4,7 +4,6 @@ History repository adapter - Implementation of UserHistoryRepository port.
 This adapter implements the UserHistoryRepository interface using SQLAlchemy.
 """
 
-from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,7 +29,7 @@ class UserHistoryRepositoryAdapter(UserHistoryRepository):
         """
         self.session = session
 
-    async def get_user_history(self, email: str) -> Optional[UserHistory]:
+    async def get_user_history(self, email: str) -> UserHistory | None:
         """
         Retrieve a user's complete trip history.
 

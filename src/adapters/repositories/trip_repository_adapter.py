@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ...core.models.trip import Trip
 from ...core.ports.trip_repository import TripRepository
 from ..database.mappers import map_trip_db_to_domain, map_trip_domain_to_db
-from ..database.models import TripDB
 
 
 class TripRepositoryAdapter(TripRepository):

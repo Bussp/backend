@@ -4,13 +4,11 @@ Mappers between database models (SQLAlchemy) and domain models.
 These functions translate between the persistence layer and the domain layer.
 """
 
-from typing import List
 
 from ...core.models.trip import Trip
 from ...core.models.user import User
 from ...core.models.user_history import UserHistory
 from .models import TripDB, UserDB
-
 
 # ===== User Mappers =====
 
@@ -51,7 +49,7 @@ def map_user_domain_to_db(user: User) -> UserDB:
     )
 
 
-def map_user_db_list_to_domain(users_db: List[UserDB]) -> List[User]:
+def map_user_db_list_to_domain(users_db: list[UserDB]) -> list[User]:
     """
     Map a list of UserDB models to User domain models.
 
@@ -109,7 +107,7 @@ def map_trip_domain_to_db(trip: Trip) -> TripDB:
     )
 
 
-def map_trip_db_list_to_domain(trips_db: List[TripDB]) -> List[Trip]:
+def map_trip_db_list_to_domain(trips_db: list[TripDB]) -> list[Trip]:
     """
     Map a list of TripDB models to Trip domain models.
 

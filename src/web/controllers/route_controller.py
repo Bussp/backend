@@ -4,8 +4,6 @@ Route controller - API endpoints for bus routes and positions.
 This controller handles queries for real-time bus information.
 """
 
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ...core.services.route_service import RouteService
@@ -54,4 +52,4 @@ async def get_bus_positions(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve bus positions: {str(e)}",
-        )
+        ) from e

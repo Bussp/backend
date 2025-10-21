@@ -1,6 +1,5 @@
 """Score service - Business logic for ranking and scoring."""
 
-from typing import List, Optional
 
 from ..models.user import User
 from ..ports.user_repository import UserRepository
@@ -20,7 +19,7 @@ class ScoreService:
         """
         self.user_repository = user_repository
 
-    async def get_user_ranking(self, email: str) -> Optional[int]:
+    async def get_user_ranking(self, email: str) -> int | None:
         """
         Get a user's position in the global ranking.
 
@@ -38,7 +37,7 @@ class ScoreService:
 
         return None
 
-    async def get_global_ranking(self) -> List[User]:
+    async def get_global_ranking(self) -> list[User]:
         """
         Get the global user ranking.
 

@@ -5,8 +5,8 @@ This module initializes the FastAPI application and wires up all dependencies
 using the Dependency Injection pattern.
 """
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from fastapi import Depends, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession

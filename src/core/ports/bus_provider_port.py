@@ -1,7 +1,6 @@
 """Bus Provider port - Interface for external bus tracking service."""
 
 from abc import ABC, abstractmethod
-from typing import List
 
 from ..models.bus import BusPosition, BusRoute, RouteIdentifier
 
@@ -26,8 +25,8 @@ class BusProviderPort(ABC):
 
     @abstractmethod
     async def get_bus_positions(
-        self, routes: List[RouteIdentifier]
-    ) -> List[BusPosition]:
+        self, routes: list[RouteIdentifier]
+    ) -> list[BusPosition]:
         """
         Get real-time positions for specified bus routes.
 

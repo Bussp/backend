@@ -4,7 +4,6 @@ User repository adapter - Implementation of UserRepository port.
 This adapter implements the UserRepository interface using SQLAlchemy.
 """
 
-from typing import List, Optional
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,9 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ...core.models.user import User
 from ...core.ports.user_repository import UserRepository
 from ..database.mappers import (
+    map_user_db_list_to_domain,
     map_user_db_to_domain,
     map_user_domain_to_db,
-    map_user_db_list_to_domain,
 )
 from ..database.models import UserDB
 
@@ -63,7 +62,7 @@ class UserRepositoryAdapter(UserRepository):
         # Return domain model
         return map_user_db_to_domain(user_db)
 
-    async def get_user_by_email(self, email: str) -> Optional[User]:
+    async def get_user_by_email(self, email: str) -> User | None:
         """
         Retrieve a user by email.
 
@@ -81,7 +80,7 @@ class UserRepositoryAdapter(UserRepository):
 
         return map_user_db_to_domain(user_db)
 
-    async def get_all_users_ordered_by_score(self) -> List[User]:
+    async def get_all_users_ordered_by_score(self) -> list[User]:
         """
         Get all users sorted by score in descending order.
 
