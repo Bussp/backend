@@ -1,6 +1,5 @@
 """User service - Business logic for user management."""
 
-
 from ..models.user import User
 from ..ports.user_repository import UserRepository
 

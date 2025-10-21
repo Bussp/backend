@@ -4,7 +4,6 @@ User repository adapter - Implementation of UserRepository port.
 This adapter implements the UserRepository interface using SQLAlchemy.
 """
 
-
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 

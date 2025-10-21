@@ -4,7 +4,6 @@ History repository adapter - Implementation of UserHistoryRepository port.
 This adapter implements the UserHistoryRepository interface using SQLAlchemy.
 """
 
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload

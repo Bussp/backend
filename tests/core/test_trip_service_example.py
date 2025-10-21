@@ -183,9 +183,7 @@ async def test_handles_repository_save_error(mocker: "MockerFixture") -> None:
     )
     user_repo.get_user_by_email = AsyncMock(return_value=test_user)
     user_repo.add_user_score = AsyncMock()
-    trip_repo.save_trip = AsyncMock(
-        side_effect=RuntimeError("Database connection lost!")
-    )
+    trip_repo.save_trip = AsyncMock(side_effect=RuntimeError("Database connection lost!"))
 
     service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
 

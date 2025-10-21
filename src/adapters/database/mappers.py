@@ -4,7 +4,6 @@ Mappers between database models (SQLAlchemy) and domain models.
 These functions translate between the persistence layer and the domain layer.
 """
 
-
 from ...core.models.trip import Trip
 from ...core.models.user import User
 from ...core.models.user_history import UserHistory

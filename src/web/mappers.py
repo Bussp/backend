@@ -5,7 +5,6 @@ These functions translate between the API layer and the domain layer,
 maintaining the separation of concerns.
 """
 
-
 from ..core.models.bus import BusPosition, RouteIdentifier
 from ..core.models.coordinate import Coordinate
 from ..core.models.user import User

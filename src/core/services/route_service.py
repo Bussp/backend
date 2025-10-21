@@ -1,6 +1,5 @@
 """Route service - Business logic for route and bus position queries."""
 
-
 from ..models.bus import BusPosition, BusRoute, RouteIdentifier
 from ..ports.bus_provider_port import BusProviderPort
 
@@ -22,9 +21,7 @@ class RouteService:
         """
         self.bus_provider = bus_provider
 
-    async def get_bus_positions(
-        self, routes: list[RouteIdentifier]
-    ) -> list[BusPosition]:
+    async def get_bus_positions(self, routes: list[RouteIdentifier]) -> list[BusPosition]:
         """
         Get current positions for specified bus routes.
 

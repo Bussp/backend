@@ -1,6 +1,5 @@
 """Score service - Business logic for ranking and scoring."""
 
-
 from ..models.user import User
 from ..ports.user_repository import UserRepository
 

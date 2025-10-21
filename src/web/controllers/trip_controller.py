@@ -12,9 +12,7 @@ from ..schemas import CreateTripRequest, CreateTripResponse
 router = APIRouter(prefix="/trips", tags=["trips"])
 
 
-@router.post(
-    "/", response_model=CreateTripResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/", response_model=CreateTripResponse, status_code=status.HTTP_201_CREATED)
 async def create_trip(
     request: CreateTripRequest,
     trip_service: TripService = Depends(),

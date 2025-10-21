@@ -92,9 +92,7 @@ class CreateTripResponse(BaseModel):
 class BusPositionsRequest(BaseModel):
     """Request schema for querying bus positions."""
 
-    routes: list[RouteIdentifierSchema] = Field(
-        ..., description="List of routes to query"
-    )
+    routes: list[RouteIdentifierSchema] = Field(..., description="List of routes to query")
 
 
 class BusPositionsResponse(BaseModel):

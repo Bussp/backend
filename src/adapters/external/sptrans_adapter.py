@@ -22,9 +22,7 @@ class SpTransAdapter(BusProviderPort):
     real-time bus information.
     """
 
-    def __init__(
-        self, api_token: str, base_url: str = "http://api.olhovivo.sptrans.com.br/v2.1"
-    ):
+    def __init__(self, api_token: str, base_url: str = "http://api.olhovivo.sptrans.com.br/v2.1"):
         """
         Initialize the SPTrans adapter.
 
@@ -45,9 +43,7 @@ class SpTransAdapter(BusProviderPort):
             True if authentication successful, False otherwise
         """
         try:
-            response = await self.client.post(
-                "/Login/Autenticar", params={"token": self.api_token}
-            )
+            response = await self.client.post("/Login/Autenticar", params={"token": self.api_token})
 
             if response.status_code == 200 and response.text == "true":
                 # Store cookies for subsequent requests
@@ -60,9 +56,7 @@ class SpTransAdapter(BusProviderPort):
             print(f"Authentication failed: {e}")
             return False
 
-    async def get_bus_positions(
-        self, routes: list[RouteIdentifier]
-    ) -> list[BusPosition]:
+    async def get_bus_positions(self, routes: list[RouteIdentifier]) -> list[BusPosition]:
         """
         Get real-time positions for specified bus routes.
 
@@ -101,8 +95,7 @@ class SpTransAdapter(BusProviderPort):
                         position = BusPosition(
                             route=route,
                             position=Coordinate(
-                                latitude=vehicle["py"]
-                                / 1_000_000,  # SPTrans uses lat * 10^6
+                                latitude=vehicle["py"] / 1_000_000,  # SPTrans uses lat * 10^6
                                 longitude=vehicle["px"] / 1_000_000,
                             ),
                             time_updated=(
