@@ -21,7 +21,9 @@ class RouteService:
         """
         self.bus_provider = bus_provider
 
-    async def get_bus_positions(self, routes: list[RouteIdentifier]) -> list[BusPosition]:
+    async def get_bus_positions(
+        self, routes: list[RouteIdentifier]
+    ) -> list[BusPosition]:
         """
         Get current positions for specified bus routes.
 

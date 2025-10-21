@@ -24,7 +24,9 @@ class BusProviderPort(ABC):
         pass
 
     @abstractmethod
-    async def get_bus_positions(self, routes: list[RouteIdentifier]) -> list[BusPosition]:
+    async def get_bus_positions(
+        self, routes: list[RouteIdentifier]
+    ) -> list[BusPosition]:
         """
         Get real-time positions for specified bus routes.
 

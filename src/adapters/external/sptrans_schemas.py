@@ -36,6 +36,8 @@ class SPTransPositionsResponse(BaseModel):
     """Schema for SPTrans positions response."""
 
     hr: datetime = Field(..., alias="currentTime", description="Current time")
-    vs: list[SPTransVehicleResponse] = Field(..., alias="vehicles", description="List of vehicles")
+    vs: list[SPTransVehicleResponse] = Field(
+        ..., alias="vehicles", description="List of vehicles"
+    )
 
     model_config = {"populate_by_name": True}

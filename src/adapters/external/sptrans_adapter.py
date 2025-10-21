@@ -43,7 +43,9 @@ class SpTransAdapter(BusProviderPort):
             True if authentication successful, False otherwise
         """
         try:
-            response = await self.client.post("/Login/Autenticar", params={"token": self.api_token})
+            response = await self.client.post(
+                "/Login/Autenticar", params={"token": self.api_token}
+            )
 
             if response.status_code == 200 and response.text == "true":
                 # Store cookies for subsequent requests
@@ -56,7 +58,9 @@ class SpTransAdapter(BusProviderPort):
             print(f"Authentication failed: {e}")
             return False
 
-    async def get_bus_positions(self, routes: list[RouteIdentifier]) -> list[BusPosition]:
+    async def get_bus_positions(
+        self, routes: list[RouteIdentifier]
+    ) -> list[BusPosition]:
         """
         Get real-time positions for specified bus routes.
 
@@ -148,7 +152,7 @@ class SpTransAdapter(BusProviderPort):
             raise ValueError(f"Route {route.bus_line} not found")
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get route details: {e}")
+            raise RuntimeError(f"Failed to get route details: {e}") from e
 
     async def close(self) -> None:
         """Close the HTTP client."""
