@@ -12,7 +12,9 @@ from ..schemas import CreateTripRequest, CreateTripResponse
 router = APIRouter(prefix="/trips", tags=["trips"])
 
 
-@router.post("/", response_model=CreateTripResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=CreateTripResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_trip(
     request: CreateTripRequest,
     trip_service: TripService = Depends(),
@@ -33,8 +35,8 @@ async def create_trip(
     try:
         trip = await trip_service.create_trip(
             email=request.email,
-            bus_line=request.bus_line,
-            bus_direction=request.bus_direction,
+            bus_line=request.route.bus_line,
+            bus_direction=request.route.bus_direction,
             distance=request.distance,
             trip_date=request.data,
         )
