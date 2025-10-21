@@ -16,10 +16,8 @@ from pydantic import BaseModel, EmailStr, Field
 class RouteIdentifierSchema(BaseModel):
     """Schema for route identifier."""
 
-    bus_line: str = Field(..., alias="busLine", description="Bus line")
-    bus_direction: int = Field(
-        ..., alias="busDirection", ge=1, le=2, description="Direction"
-    )
+    bus_line: str = Field(..., description="Bus line")
+    bus_direction: int = Field(..., description="Direction", ge=1, le=2)
 
     model_config = {"populate_by_name": True}
 
@@ -36,7 +34,7 @@ class BusPositionSchema(BaseModel):
 
     route: RouteIdentifierSchema
     position: CoordinateSchema
-    time_updated: datetime = Field(..., alias="timeUpdated")
+    time_updated: datetime = Field(..., description="Last update timestamp")
 
     model_config = {"populate_by_name": True}
 

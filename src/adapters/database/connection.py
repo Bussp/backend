@@ -52,13 +52,13 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
-async def create_tables():
+async def create_tables() -> None:
     """Create all database tables."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 
-async def drop_tables():
+async def drop_tables() -> None:
     """Drop all database tables."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

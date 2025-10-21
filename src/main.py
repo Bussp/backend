@@ -38,7 +38,7 @@ from .web.controllers import (
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     Application lifespan manager.
 
@@ -223,7 +223,7 @@ app.include_router(history_controller.router)
 
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, str]:
     """Root endpoint with API information."""
     return {
         "message": "Welcome to BusSP API",
@@ -234,7 +234,7 @@ async def root():
 
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy"}
 
