@@ -1,158 +1,185 @@
 """
-Example test demonstrating how to test the core layer in isolation.
+Examples demonstrating intelligent mocking with autospec and pytest-mock.
 
-This test shows how Hexagonal Architecture enables testing business logic
-without any infrastructure dependencies (no database, no HTTP, no external APIs).
+Uses create_autospec() to create type-safe mocks that match port interfaces,
+avoiding manual mock classes and reducing boilerplate.
 """
 
 import pytest
 from datetime import datetime
-from typing import List, Optional
+from unittest.mock import create_autospec
 
 from src.core.models.user import User
-from src.core.models.trip import Trip
 from src.core.ports.user_repository import UserRepository
 from src.core.ports.trip_repository import TripRepository
 from src.core.services.trip_service import TripService
 
 
-# ===== Mock Implementations (Test Doubles) =====
-
-
-class MockUserRepository(UserRepository):
-    """Mock user repository for testing."""
-
-    def __init__(self):
-        self.users: dict[str, User] = {}
-
-    async def save_user(self, user: User) -> User:
-        if user.email in self.users:
-            raise ValueError(f"User with email {user.email} already exists")
-        self.users[user.email] = user
-        return user
-
-    async def get_user_by_email(self, email: str) -> Optional[User]:
-        return self.users.get(email)
-
-    async def get_all_users_ordered_by_score(self) -> List[User]:
-        return sorted(self.users.values(), key=lambda u: u.score, reverse=True)
-
-    async def add_user_score(self, email: str, score_to_add: int) -> User:
-        user = self.users.get(email)
-        if not user:
-            raise ValueError(f"User with email {email} not found")
-        user.score += score_to_add
-        return user
-
-
-class MockTripRepository(TripRepository):
-    """Mock trip repository for testing."""
-
-    def __init__(self):
-        self.trips: List[Trip] = []
-
-    async def save_trip(self, trip: Trip) -> Trip:
-        self.trips.append(trip)
-        return trip
-
-
-# ===== Tests =====
-
-
 @pytest.mark.asyncio
 async def test_create_trip_calculates_score_correctly():
-    """
-    Test that trip creation calculates score based on distance.
+    """Test score calculation with autospecced mocks."""
+    # Arrange
+    user_repo = create_autospec(UserRepository, instance=True)
+    trip_repo = create_autospec(TripRepository, instance=True)
 
-    This test demonstrates testing business logic without any database.
-    """
-    # Arrange: Set up mock repositories
-    user_repo = MockUserRepository()
-    trip_repo = MockTripRepository()
+    test_user = User(
+        name="Test User",
+        email="test@example.com",
+        score=0,
+        password="hashed_password",
+    )
+    user_repo.get_user_by_email.return_value = test_user
+    trip_repo.save_trip.side_effect = lambda t: t
 
-    # Create a test user
-    test_user = User(name="Test User", email="test@example.com", score=0, password="hashed")
-    await user_repo.save_user(test_user)
+    service = TripService(trip_repo, user_repo)
 
-    # Create the service with mock repositories
-    trip_service = TripService(trip_repo, user_repo)
-
-    # Act: Create a trip with 1000 meters distance
-    trip = await trip_service.create_trip(
+    # Act
+    trip = await service.create_trip(
         email="test@example.com",
         bus_line="8000",
         bus_direction=1,
         distance=1000,
-        trip_date=datetime.now(),
+        trip_date=datetime(2025, 10, 16, 10, 0, 0),
     )
 
-    # Assert: Score should be distance / 100 = 10 points
+    # Assert
     assert trip.score == 10
-    assert len(trip_repo.trips) == 1
+    assert trip.email == "test@example.com"
+    assert trip.bus_line == "8000"
+
+    user_repo.get_user_by_email.assert_awaited_once_with("test@example.com")
+    trip_repo.save_trip.assert_awaited_once()
+    user_repo.add_user_score.assert_awaited_once_with("test@example.com", 10)
 
 
 @pytest.mark.asyncio
-async def test_create_trip_updates_user_score():
-    """Test that creating a trip updates the user's total score."""
+async def test_create_trip_with_pytest_mock(mocker):
+    """Test using pytest-mock fixture for cleaner syntax."""
     # Arrange
-    user_repo = MockUserRepository()
-    trip_repo = MockTripRepository()
+    user_repo = mocker.create_autospec(UserRepository, instance=True)
+    trip_repo = mocker.create_autospec(TripRepository, instance=True)
 
-    test_user = User(name="Test User", email="test@example.com", score=0, password="hashed")
-    await user_repo.save_user(test_user)
-
-    trip_service = TripService(trip_repo, user_repo)
-
-    # Act: Create two trips
-    await trip_service.create_trip(
-        email="test@example.com",
-        bus_line="8000",
-        bus_direction=1,
-        distance=500,  # 5 points
-        trip_date=datetime.now(),
+    test_user = User(
+        name="Alice",
+        email="alice@example.com",
+        score=0,
+        password="secure_hash",
     )
+    user_repo.get_user_by_email.return_value = test_user
+    trip_repo.save_trip.side_effect = lambda t: t
 
-    await trip_service.create_trip(
-        email="test@example.com",
-        bus_line="8000",
+    service = TripService(trip_repo, user_repo)
+
+    # Act
+    trip = await service.create_trip(
+        email="alice@example.com",
+        bus_line="9000",
         bus_direction=2,
-        distance=1500,  # 15 points
-        trip_date=datetime.now(),
+        distance=2500,
+        trip_date=datetime(2025, 10, 16, 14, 30, 0),
     )
 
-    # Assert: User should have 20 total points
-    updated_user = await user_repo.get_user_by_email("test@example.com")
-    assert updated_user is not None
-    assert updated_user.score == 20
+    # Assert
+    assert trip.score == 25
+    user_repo.add_user_score.assert_awaited_once_with("alice@example.com", 25)
 
 
 @pytest.mark.asyncio
-async def test_create_trip_fails_for_nonexistent_user():
-    """Test that creating a trip for a non-existent user raises an error."""
+async def test_create_trip_fails_for_nonexistent_user(mocker):
+    """Test error handling when user doesn't exist."""
     # Arrange
-    user_repo = MockUserRepository()
-    trip_repo = MockTripRepository()
-    trip_service = TripService(trip_repo, user_repo)
+    user_repo = mocker.create_autospec(UserRepository, instance=True)
+    trip_repo = mocker.create_autospec(TripRepository, instance=True)
+
+    user_repo.get_user_by_email.return_value = None
+    service = TripService(trip_repo, user_repo)
 
     # Act & Assert
     with pytest.raises(ValueError, match="not found"):
-        await trip_service.create_trip(
-            email="nonexistent@example.com",
+        await service.create_trip(
+            email="ghost@example.com",
             bus_line="8000",
             bus_direction=1,
             distance=1000,
             trip_date=datetime.now(),
         )
 
+    user_repo.get_user_by_email.assert_awaited_once_with("ghost@example.com")
+    trip_repo.save_trip.assert_not_awaited()
+    user_repo.add_user_score.assert_not_awaited()
 
-"""
-Key Takeaways:
 
-1. **No Database Required**: Tests run instantly without any database setup
-2. **No HTTP Required**: We test services directly without FastAPI
-3. **Full Control**: Mock repositories let us control exactly what data exists
-4. **Business Logic Focus**: We're testing the scoring algorithm, not infrastructure
-5. **Fast & Reliable**: No flaky tests due to database or network issues
+@pytest.mark.asyncio
+async def test_multiple_trips(mocker):
+    """Test multiple sequential calls to the service."""
+    # Arrange
+    user_repo = mocker.create_autospec(UserRepository, instance=True)
+    trip_repo = mocker.create_autospec(TripRepository, instance=True)
 
-This is the power of Hexagonal Architecture - pure, fast, isolated unit tests!
-"""
+    test_user = User(
+        name="Bob",
+        email="bob@example.com",
+        score=0,
+        password="hash",
+    )
+    user_repo.get_user_by_email.return_value = test_user
+    trip_repo.save_trip.side_effect = lambda t: t
+
+    service = TripService(trip_repo, user_repo)
+
+    # Act
+    trip1 = await service.create_trip(
+        email="bob@example.com",
+        bus_line="8000",
+        bus_direction=1,
+        distance=500,
+        trip_date=datetime.now(),
+    )
+
+    trip2 = await service.create_trip(
+        email="bob@example.com",
+        bus_line="8000",
+        bus_direction=2,
+        distance=1500,
+        trip_date=datetime.now(),
+    )
+
+    # Assert
+    assert trip1.score == 5
+    assert trip2.score == 15
+    assert trip_repo.save_trip.await_count == 2
+    assert user_repo.add_user_score.await_count == 2
+    user_repo.add_user_score.assert_any_await("bob@example.com", 5)
+    user_repo.add_user_score.assert_any_await("bob@example.com", 15)
+
+
+@pytest.mark.asyncio
+async def test_handles_repository_save_error(mocker):
+    """Test error handling when repository fails."""
+    # Arrange
+    user_repo = mocker.create_autospec(UserRepository, instance=True)
+    trip_repo = mocker.create_autospec(TripRepository, instance=True)
+
+    test_user = User(
+        name="Charlie",
+        email="charlie@example.com",
+        score=0,
+        password="hash",
+    )
+    user_repo.get_user_by_email.return_value = test_user
+    trip_repo.save_trip.side_effect = RuntimeError("Database connection lost!")
+
+    service = TripService(trip_repo, user_repo)
+
+    # Act & Assert
+    with pytest.raises(RuntimeError, match="Database connection lost"):
+        await service.create_trip(
+            email="charlie@example.com",
+            bus_line="8000",
+            bus_direction=1,
+            distance=1000,
+            trip_date=datetime.now(),
+        )
+
+    trip_repo.save_trip.assert_awaited_once()
+    user_repo.add_user_score.assert_not_awaited()
