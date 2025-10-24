@@ -6,7 +6,10 @@ It follows the pattern: Request -> Map to Domain -> Service -> Map to Response
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from ...adapters.database.connection import get_db
+from ...adapters.repositories.user_repository_adapter import UserRepositoryAdapter
 from ...core.services.user_service import UserService
 from ..mappers import map_user_domain_to_response
 from ..schemas import UserCreateAccountRequest, UserLoginRequest, UserResponse
@@ -14,10 +17,24 @@ from ..schemas import UserCreateAccountRequest, UserLoginRequest, UserResponse
 router = APIRouter(prefix="/users", tags=["users"])
 
 
+def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
+    """
+    Dependency that provides a UserService instance.
+
+    Args:
+        db: Database session
+
+    Returns:
+        Configured UserService instance
+    """
+    user_repo = UserRepositoryAdapter(db)
+    return UserService(user_repo)
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     request: UserCreateAccountRequest,
-    user_service: UserService = Depends(),
+    user_service: UserService = Depends(get_user_service),
 ) -> UserResponse:
     """
     Create a new user account.
@@ -53,7 +70,7 @@ async def create_user(
 @router.post("/login", response_model=UserResponse)
 async def login_user(
     request: UserLoginRequest,
-    user_service: UserService = Depends(),
+    user_service: UserService = Depends(get_user_service),
 ) -> UserResponse:
     """
     Authenticate a user.
@@ -86,7 +103,7 @@ async def login_user(
 @router.get("/{email}", response_model=UserResponse)
 async def get_user(
     email: str,
-    user_service: UserService = Depends(),
+    user_service: UserService = Depends(get_user_service),
 ) -> UserResponse:
     """
     Get user information by email.

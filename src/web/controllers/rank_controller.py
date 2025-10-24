@@ -5,7 +5,10 @@ This controller handles queries for user rankings and leaderboards.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from ...adapters.database.connection import get_db
+from ...adapters.repositories.user_repository_adapter import UserRepositoryAdapter
 from ...core.services.score_service import ScoreService
 from ..mappers import map_user_domain_list_to_response
 from ..schemas import GlobalRankingResponse, UserRankingRequest, UserRankingResponse
@@ -13,10 +16,24 @@ from ..schemas import GlobalRankingResponse, UserRankingRequest, UserRankingResp
 router = APIRouter(prefix="/rank", tags=["ranking"])
 
 
+def get_score_service(db: AsyncSession = Depends(get_db)) -> ScoreService:
+    """
+    Dependency that provides a ScoreService instance.
+
+    Args:
+        db: Database session
+
+    Returns:
+        Configured ScoreService instance
+    """
+    user_repo = UserRepositoryAdapter(db)
+    return ScoreService(user_repo)
+
+
 @router.post("/user", response_model=UserRankingResponse)
 async def get_user_ranking(
     request: UserRankingRequest,
-    score_service: ScoreService = Depends(),
+    score_service: ScoreService = Depends(get_score_service),
 ) -> UserRankingResponse:
     """
     Get a user's position in the global ranking.
@@ -44,7 +61,7 @@ async def get_user_ranking(
 
 @router.get("/global", response_model=GlobalRankingResponse)
 async def get_global_ranking(
-    score_service: ScoreService = Depends(),
+    score_service: ScoreService = Depends(get_score_service),
 ) -> GlobalRankingResponse:
     """
     Get the global user ranking.

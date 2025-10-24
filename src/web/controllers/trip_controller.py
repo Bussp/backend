@@ -5,11 +5,30 @@ This controller handles trip creation and scoring.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from ...adapters.database.connection import get_db
+from ...adapters.repositories.trip_repository_adapter import TripRepositoryAdapter
+from ...adapters.repositories.user_repository_adapter import UserRepositoryAdapter
 from ...core.services.trip_service import TripService
 from ..schemas import CreateTripRequest, CreateTripResponse
 
 router = APIRouter(prefix="/trips", tags=["trips"])
+
+
+def get_trip_service(db: AsyncSession = Depends(get_db)) -> TripService:
+    """
+    Dependency that provides a TripService instance.
+
+    Args:
+        db: Database session
+
+    Returns:
+        Configured TripService instance
+    """
+    trip_repo = TripRepositoryAdapter(db)
+    user_repo = UserRepositoryAdapter(db)
+    return TripService(trip_repo, user_repo)
 
 
 @router.post(
@@ -17,7 +36,7 @@ router = APIRouter(prefix="/trips", tags=["trips"])
 )
 async def create_trip(
     request: CreateTripRequest,
-    trip_service: TripService = Depends(),
+    trip_service: TripService = Depends(get_trip_service),
 ) -> CreateTripResponse:
     """
     Create a new trip and calculate score.

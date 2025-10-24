@@ -5,17 +5,34 @@ This controller handles queries for user trip history.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from ...adapters.database.connection import get_db
+from ...adapters.repositories.history_repository_adapter import UserHistoryRepositoryAdapter
 from ...core.services.history_service import HistoryService
 from ..schemas import HistoryRequest, HistoryResponse, TripHistoryEntry
 
 router = APIRouter(prefix="/history", tags=["history"])
 
 
+def get_history_service(db: AsyncSession = Depends(get_db)) -> HistoryService:
+    """
+    Dependency that provides a HistoryService instance.
+
+    Args:
+        db: Database session
+
+    Returns:
+        Configured HistoryService instance
+    """
+    history_repo = UserHistoryRepositoryAdapter(db)
+    return HistoryService(history_repo)
+
+
 @router.post("/", response_model=HistoryResponse)
 async def get_user_history(
     request: HistoryRequest,
-    history_service: HistoryService = Depends(),
+    history_service: HistoryService = Depends(get_history_service),
 ) -> HistoryResponse:
     """
     Get a user's trip history summary.
