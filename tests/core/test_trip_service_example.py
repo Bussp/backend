@@ -1,22 +1,23 @@
 """
 Exemplo demonstrando o uso de mocks com create_autospec().
 
-Note que o teste só depende da implementação do serviço. As implementações de 
-repositórios e adaptadores são simuladas, e passamos as respostas que esperamos 
+Note que o teste só depende da implementação do serviço. As implementações de
+repositórios e adaptadores são simuladas, e passamos as respostas que esperamos
 dessas funções que não estão sendo testadas no próprio teste. Dessa maneira,
 isolamos as preocupações do teste, que passa a verificar apenas o service.
-Isso faz o teste ficar mais específico, fácil de escrever e fácil de debugar. 
+Isso faz o teste ficar mais específico, fácil de escrever e fácil de debugar.
 Principalmente conforme o código cresce.
 """
 
-import pytest
 from datetime import datetime
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, create_autospec
 
+import pytest
+
 from src.core.models.user import User
-from src.core.ports.user_repository import UserRepository
 from src.core.ports.trip_repository import TripRepository
+from src.core.ports.user_repository import UserRepository
 from src.core.services.trip_service import TripService
 
 if TYPE_CHECKING:
@@ -182,9 +183,7 @@ async def test_handles_repository_save_error(mocker: "MockerFixture") -> None:
     )
     user_repo.get_user_by_email = AsyncMock(return_value=test_user)
     user_repo.add_user_score = AsyncMock()
-    trip_repo.save_trip = AsyncMock(
-        side_effect=RuntimeError("Database connection lost!")
-    )
+    trip_repo.save_trip = AsyncMock(side_effect=RuntimeError("Database connection lost!"))
 
     service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
 

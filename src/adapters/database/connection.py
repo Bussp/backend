@@ -4,7 +4,7 @@ Database connection configuration.
 This module provides async database session management using SQLAlchemy 2.0.
 """
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase

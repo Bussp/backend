@@ -4,8 +4,6 @@ Route controller - API endpoints for bus routes and positions.
 This controller handles queries for real-time bus information.
 """
 
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ...adapters.external.sptrans_adapter import SpTransAdapter

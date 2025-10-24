@@ -6,7 +6,6 @@ These are separate from domain models to maintain separation of concerns.
 """
 
 from datetime import datetime
-from typing import List
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -93,15 +92,13 @@ class CreateTripResponse(BaseModel):
 class BusPositionsRequest(BaseModel):
     """Request schema for querying bus positions."""
 
-    routes: List[RouteIdentifierSchema] = Field(
-        ..., description="List of routes to query"
-    )
+    routes: list[RouteIdentifierSchema] = Field(..., description="List of routes to query")
 
 
 class BusPositionsResponse(BaseModel):
     """Response schema for bus positions."""
 
-    buses: List[BusPositionSchema] = Field(..., description="List of bus positions")
+    buses: list[BusPositionSchema] = Field(..., description="List of bus positions")
 
 
 # ===== Ranking Schemas =====
@@ -122,7 +119,7 @@ class UserRankingResponse(BaseModel):
 class GlobalRankingResponse(BaseModel):
     """Response schema for global ranking."""
 
-    users: List[UserResponse] = Field(..., description="List of users by rank")
+    users: list[UserResponse] = Field(..., description="List of users by rank")
 
 
 # ===== History Schemas =====
@@ -144,4 +141,4 @@ class TripHistoryEntry(BaseModel):
 class HistoryResponse(BaseModel):
     """Response schema for user history."""
 
-    trips: List[TripHistoryEntry] = Field(..., description="List of user trips")
+    trips: list[TripHistoryEntry] = Field(..., description="List of user trips")

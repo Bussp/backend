@@ -19,10 +19,14 @@ select = [
 ]
 ignore = [
 	"E501", # line too long (handled by formatter)
+	"B008", # FastAPI Depends() pattern is intentional
 ]
 
 [lint.per-file-ignores]
 "__init__.py" = ["F401"] # Allow unused imports in __init__.py
+"src/web/controllers/**" = ["B904"]
+"src/adapters/external/**" = ["B904"]
+"tests/**" = ["W291"]
 
 [format]
 quote-style = "double"

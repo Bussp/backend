@@ -1,7 +1,6 @@
 """User history domain model."""
 
 from dataclasses import dataclass
-from typing import List
 
 from .trip import Trip
 
@@ -17,4 +16,4 @@ class UserHistory:
     """
 
     email: str
-    trips: List[Trip]
+    trips: list[Trip]

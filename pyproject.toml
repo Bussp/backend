@@ -70,10 +70,16 @@ select = [
 ]
 ignore = [
 	"E501", # line too long (handled by formatter)
+	"B008", # FastAPI Depends() pattern is intentional
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+# Ignorar B008 em arquivos FastAPI (uso legítimo de Depends)
+"src/main.py" = ["B008"]
+"src/web/controllers/**" = ["B008", "B904"]
+"src/adapters/external/**" = ["B904"]
+"tests/**" = ["W291"]
 
 [tool.ruff.format]
 quote-style = "double"

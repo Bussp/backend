@@ -1,7 +1,6 @@
 """User repository port - Interface for user data persistence."""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
 
 from ..models.user import User
 
@@ -31,7 +30,7 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_user_by_email(self, email: str) -> Optional[User]:
+    async def get_user_by_email(self, email: str) -> User | None:
         """
         Retrieve a user by their email address.
 
@@ -44,7 +43,7 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_all_users_ordered_by_score(self) -> List[User]:
+    async def get_all_users_ordered_by_score(self) -> list[User]:
         """
         Get all users sorted by score in descending order.
 

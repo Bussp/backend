@@ -1,7 +1,5 @@
 """User service - Business logic for user management."""
 
-from typing import Optional
-
 from ..models.user import User
 from ..ports.user_repository import UserRepository
 
@@ -47,7 +45,7 @@ class UserService:
         user = User(name=name, email=email, password=password, score=0)
         return await self.user_repository.save_user(user)
 
-    async def get_user(self, email: str) -> Optional[User]:
+    async def get_user(self, email: str) -> User | None:
         """
         Retrieve a user by email.
 
@@ -59,7 +57,7 @@ class UserService:
         """
         return await self.user_repository.get_user_by_email(email)
 
-    async def login_user(self, email: str, password: str) -> Optional[User]:
+    async def login_user(self, email: str, password: str) -> User | None:
         """
         Authenticate a user.
 

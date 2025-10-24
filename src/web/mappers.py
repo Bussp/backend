@@ -5,12 +5,8 @@ These functions translate between the API layer and the domain layer,
 maintaining the separation of concerns.
 """
 
-from datetime import datetime
-from typing import List
-
 from ..core.models.bus import BusPosition, RouteIdentifier
 from ..core.models.coordinate import Coordinate
-from ..core.models.trip import Trip
 from ..core.models.user import User
 from .schemas import (
     BusPositionSchema,
@@ -18,7 +14,6 @@ from .schemas import (
     RouteIdentifierSchema,
     UserResponse,
 )
-
 
 # ===== User Mappers =====
 
@@ -40,7 +35,7 @@ def map_user_domain_to_response(user: User) -> UserResponse:
     )
 
 
-def map_user_domain_list_to_response(users: List[User]) -> List[UserResponse]:
+def map_user_domain_list_to_response(users: list[User]) -> list[UserResponse]:
     """
     Map a list of User domain models to UserResponse schemas.
 
@@ -126,8 +121,8 @@ def map_bus_position_domain_to_schema(position: BusPosition) -> BusPositionSchem
 
 
 def map_bus_position_list_to_schema(
-    positions: List[BusPosition],
-) -> List[BusPositionSchema]:
+    positions: list[BusPosition],
+) -> list[BusPositionSchema]:
     """
     Map a list of BusPosition domain models to BusPositionSchema list.
 

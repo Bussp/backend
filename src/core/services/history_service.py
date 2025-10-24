@@ -1,6 +1,5 @@
 """History service - Business logic for user trip history."""
 
-from typing import List, Optional
 from datetime import datetime
 
 from ..models.user_history import UserHistory
@@ -21,7 +20,7 @@ class HistoryService:
         """
         self.history_repository = history_repository
 
-    async def get_user_history(self, email: str) -> Optional[UserHistory]:
+    async def get_user_history(self, email: str) -> UserHistory | None:
         """
         Get a user's complete trip history.
 
@@ -33,7 +32,7 @@ class HistoryService:
         """
         return await self.history_repository.get_user_history(email)
 
-    async def get_user_history_summary(self, email: str) -> tuple[List[datetime], List[int]]:
+    async def get_user_history_summary(self, email: str) -> tuple[list[datetime], list[int]]:
         """
         Get a summary of user's history as dates and scores.
 
