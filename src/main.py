@@ -18,9 +18,11 @@ from .adapters.repositories.history_repository_adapter import (
 )
 from .adapters.repositories.trip_repository_adapter import TripRepositoryAdapter
 from .adapters.repositories.user_repository_adapter import UserRepositoryAdapter
+from .adapters.security.hashing import PasslibPasswordHasher
 from .config import settings
 from .core.ports.bus_provider_port import BusProviderPort
 from .core.ports.history_repository import UserHistoryRepository
+from .core.ports.password_hasher import PasswordHasherPort
 from .core.ports.trip_repository import TripRepository
 from .core.ports.user_repository import UserRepository
 from .core.services.history_service import HistoryService
@@ -135,7 +137,8 @@ def get_user_service(
     Returns:
         UserService instance
     """
-    return UserService(user_repository)
+    password_hasher: PasswordHasherPort = PasslibPasswordHasher()
+    return UserService(user_repository, password_hasher)
 
 
 def get_trip_service(
