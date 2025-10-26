@@ -10,10 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ...adapters.database.connection import get_db
 from ...adapters.repositories.trip_repository_adapter import TripRepositoryAdapter
 from ...adapters.repositories.user_repository_adapter import UserRepositoryAdapter
+from ...core.models.user import User
 from ...core.services.trip_service import TripService
 from ..schemas import CreateTripRequest, CreateTripResponse
 
 router = APIRouter(prefix="/trips", tags=["trips"])
+
+# Import get_current_user from user_controller to avoid circular imports
+from .user_controller import get_current_user  # noqa: E402
 
 
 def get_trip_service(db: AsyncSession = Depends(get_db)) -> TripService:
@@ -35,13 +39,17 @@ def get_trip_service(db: AsyncSession = Depends(get_db)) -> TripService:
 async def create_trip(
     request: CreateTripRequest,
     trip_service: TripService = Depends(get_trip_service),
+    current_user: User = Depends(get_current_user),
 ) -> CreateTripResponse:
     """
     Create a new trip and calculate score.
+    
+    **Requires authentication**: User must be logged in with a valid JWT token.
 
     Args:
         request: Trip creation request
         trip_service: Injected trip service
+        current_user: Authenticated user (from JWT token)
 
     Returns:
         Score earned from the trip

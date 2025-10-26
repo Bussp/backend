@@ -9,11 +9,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...adapters.database.connection import get_db
 from ...adapters.repositories.user_repository_adapter import UserRepositoryAdapter
+from ...core.models.user import User
 from ...core.services.score_service import ScoreService
 from ..mappers import map_user_domain_list_to_response
 from ..schemas import GlobalRankingResponse, UserRankingRequest, UserRankingResponse
 
 router = APIRouter(prefix="/rank", tags=["ranking"])
+
+# Import get_current_user from user_controller to avoid circular imports
+from .user_controller import get_current_user  # noqa: E402
 
 
 def get_score_service(db: AsyncSession = Depends(get_db)) -> ScoreService:
@@ -34,13 +38,17 @@ def get_score_service(db: AsyncSession = Depends(get_db)) -> ScoreService:
 async def get_user_ranking(
     request: UserRankingRequest,
     score_service: ScoreService = Depends(get_score_service),
+    current_user: User = Depends(get_current_user),
 ) -> UserRankingResponse:
     """
     Get a user's position in the global ranking.
+    
+    **Requires authentication**: User must be logged in with a valid JWT token.
 
     Args:
         request: Request with user email
         score_service: Injected score service
+        current_user: Authenticated user (from JWT token)
 
     Returns:
         User's rank position

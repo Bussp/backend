@@ -66,6 +66,13 @@ class UserResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class TokenResponse(BaseModel):
+    """Response schema for login (JWT token)."""
+
+    access_token: str = Field(..., description="JWT access token")
+    token_type: str = Field(default="bearer", description="Token type")
+
+
 # ===== Trip Management Schemas =====
 
 
