@@ -43,7 +43,6 @@ class UserService:
         if existing_user:
             raise ValueError(f"User with email {email} already exists")
 
-        # Hash password and create new user
         hashed = self.password_hasher.hash(password)
         user = User(name=name, email=email, password=hashed, score=0)
         return await self.user_repository.save_user(user)

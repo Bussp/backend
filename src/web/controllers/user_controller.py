@@ -129,7 +129,6 @@ async def login_user(
     Raises:
         HTTPException: If authentication fails
     """
-    # OAuth2PasswordRequestForm uses 'username' field, which we treat as email
     user = await user_service.login_user(
         email=request.username,
         password=request.password,
@@ -142,7 +141,6 @@ async def login_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Create JWT token
     access_token = create_access_token(data={"sub": user.email})
     return TokenResponse(access_token=access_token, token_type="bearer")
 
