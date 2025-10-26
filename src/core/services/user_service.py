@@ -1,6 +1,7 @@
 """User service - Business logic for user management."""
 
 from ..models.user import User
+from ..ports.password_hasher import PasswordHasherPort
 from ..ports.user_repository import UserRepository
 
 
@@ -12,7 +13,7 @@ class UserService:
     It depends on abstractions (ports), not concrete implementations.
     """
 
-    def __init__(self, user_repository: UserRepository):
+    def __init__(self, user_repository: UserRepository, password_hasher: PasswordHasherPort):
         """
         Initialize the user service.
 
@@ -20,6 +21,7 @@ class UserService:
             user_repository: Implementation of UserRepository port
         """
         self.user_repository = user_repository
+        self.password_hasher = password_hasher
 
     async def create_user(self, name: str, email: str, password: str) -> User:
         """
@@ -28,7 +30,7 @@ class UserService:
         Args:
             name: User's full name
             email: User's email address
-            password: User's password (should be hashed before calling this)
+            password: User's password in plain text (will be hashed internally)
 
         Returns:
             The created user
@@ -41,8 +43,9 @@ class UserService:
         if existing_user:
             raise ValueError(f"User with email {email} already exists")
 
-        # Create new user
-        user = User(name=name, email=email, password=password, score=0)
+        # Hash password and create new user
+        hashed = self.password_hasher.hash(password)
+        user = User(name=name, email=email, password=hashed, score=0)
         return await self.user_repository.save_user(user)
 
     async def get_user(self, email: str) -> User | None:
@@ -63,12 +66,14 @@ class UserService:
 
         Args:
             email: User's email
-            password: User's password (hashed)
+            password: User's password in plain text
 
         Returns:
             User if authentication successful, None otherwise
         """
         user = await self.user_repository.get_user_by_email(email)
-        if user and user.password == password:
+        if not user:
+            return None
+        if self.password_hasher.verify(password, user.password):
             return user
         return None

@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...adapters.database.connection import get_db
 from ...adapters.repositories.user_repository_adapter import UserRepositoryAdapter
+from ...adapters.security.hashing import PasslibPasswordHasher
+from ...core.ports.password_hasher import PasswordHasherPort
 from ...core.services.user_service import UserService
 from ..mappers import map_user_domain_to_response
 from ..schemas import UserCreateAccountRequest, UserLoginRequest, UserResponse
@@ -17,7 +19,15 @@ from ..schemas import UserCreateAccountRequest, UserLoginRequest, UserResponse
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
+def get_password_hasher() -> PasswordHasherPort:
+    """Dependency that provides a password hasher implementation."""
+    return PasslibPasswordHasher()
+
+
+def get_user_service(
+    db: AsyncSession = Depends(get_db),
+    password_hasher: PasswordHasherPort = Depends(get_password_hasher),
+) -> UserService:
     """
     Dependency that provides a UserService instance.
 
@@ -28,7 +38,7 @@ def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
         Configured UserService instance
     """
     user_repo = UserRepositoryAdapter(db)
-    return UserService(user_repo)
+    return UserService(user_repo, password_hasher)
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -50,12 +60,10 @@ async def create_user(
         HTTPException: If user already exists or validation fails
     """
     try:
-        # In production, hash the password before passing to service
-        # For now, we pass it as-is for simplicity
         user = await user_service.create_user(
             name=request.name,
             email=request.email,
-            password=request.password,  # Should be hashed
+            password=request.password,
         )
 
         return map_user_domain_to_response(user)
@@ -85,10 +93,9 @@ async def login_user(
     Raises:
         HTTPException: If authentication fails
     """
-    # In production, compare hashed password
     user = await user_service.login_user(
         email=request.email,
-        password=request.password,  # Should be hashed
+        password=request.password,
     )
 
     if not user:
