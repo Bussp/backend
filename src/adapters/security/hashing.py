@@ -6,7 +6,6 @@ _pwd_ctx = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
 
 
 class PasslibPasswordHasher(PasswordHasherPort):
-
     def hash(self, plain: str) -> str:
         return _pwd_ctx.hash(plain)
 

@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 
 
 class PasswordHasherPort(ABC):
-
-
     @abstractmethod
     def hash(self, plain: str) -> str:
         raise NotImplementedError
