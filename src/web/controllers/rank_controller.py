@@ -42,8 +42,6 @@ async def get_user_ranking(
 ) -> UserRankingResponse:
     """
     Get a user's position in the global ranking.
-    
-    **Requires authentication**: User must be logged in with a valid JWT token.
 
     Args:
         request: Request with user email

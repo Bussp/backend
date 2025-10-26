@@ -43,8 +43,6 @@ async def create_trip(
 ) -> CreateTripResponse:
     """
     Create a new trip and calculate score.
-    
-    **Requires authentication**: User must be logged in with a valid JWT token.
 
     Args:
         request: Trip creation request

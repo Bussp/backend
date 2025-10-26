@@ -41,8 +41,6 @@ async def get_user_history(
 ) -> HistoryResponse:
     """
     Get a user's trip history summary.
-    
-    **Requires authentication**: User must be logged in with a valid JWT token.
 
     Args:
         request: Request with user email
