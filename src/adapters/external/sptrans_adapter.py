@@ -6,7 +6,6 @@ with the SPTrans API.
 """
 
 from datetime import datetime
-from typing import List
 
 import httpx
 
@@ -23,9 +22,7 @@ class SpTransAdapter(BusProviderPort):
     real-time bus information.
     """
 
-    def __init__(
-        self, api_token: str, base_url: str = "http://api.olhovivo.sptrans.com.br/v2.1"
-    ):
+    def __init__(self, api_token: str, base_url: str = "http://api.olhovivo.sptrans.com.br/v2.1"):
         """
         Initialize the SPTrans adapter.
 
@@ -46,9 +43,7 @@ class SpTransAdapter(BusProviderPort):
             True if authentication successful, False otherwise
         """
         try:
-            response = await self.client.post(
-                f"/Login/Autenticar", params={"token": self.api_token}
-            )
+            response = await self.client.post("/Login/Autenticar", params={"token": self.api_token})
 
             if response.status_code == 200 and response.text == "true":
                 # Store cookies for subsequent requests
@@ -61,9 +56,7 @@ class SpTransAdapter(BusProviderPort):
             print(f"Authentication failed: {e}")
             return False
 
-    async def get_bus_positions(
-        self, routes: List[RouteIdentifier]
-    ) -> List[BusPosition]:
+    async def get_bus_positions(self, routes: list[RouteIdentifier]) -> list[BusPosition]:
         """
         Get real-time positions for specified bus routes.
 
@@ -79,7 +72,7 @@ class SpTransAdapter(BusProviderPort):
         if not self.session_token:
             raise RuntimeError("Not authenticated. Call authenticate() first.")
 
-        positions: List[BusPosition] = []
+        positions: list[BusPosition] = []
 
         # For each route, query the API
         for route in routes:
@@ -87,7 +80,7 @@ class SpTransAdapter(BusProviderPort):
                 # SPTrans API expects: /Posicao/Linha?codigoLinha={line_code}
                 # In a real implementation, you'd need to map bus_line to line code
                 response = await self.client.get(
-                    f"/Posicao/Linha", params={"codigoLinha": route.bus_line}
+                    "/Posicao/Linha", params={"codigoLinha": route.bus_line}
                 )
 
                 if response.status_code == 200:
@@ -102,8 +95,7 @@ class SpTransAdapter(BusProviderPort):
                         position = BusPosition(
                             route=route,
                             position=Coordinate(
-                                latitude=vehicle["py"]
-                                / 1_000_000,  # SPTrans uses lat * 10^6
+                                latitude=vehicle["py"] / 1_000_000,  # SPTrans uses lat * 10^6
                                 longitude=vehicle["px"] / 1_000_000,
                             ),
                             time_updated=(
@@ -139,7 +131,7 @@ class SpTransAdapter(BusProviderPort):
         try:
             # SPTrans API: /Linha/Buscar?termosBusca={search_term}
             response = await self.client.get(
-                f"/Linha/Buscar", params={"termosBusca": route.bus_line}
+                "/Linha/Buscar", params={"termosBusca": route.bus_line}
             )
 
             if response.status_code == 200:

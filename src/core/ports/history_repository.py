@@ -1,7 +1,6 @@
 """User history repository port - Interface for retrieving user trip history."""
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from ..models.user_history import UserHistory
 
@@ -14,7 +13,7 @@ class UserHistoryRepository(ABC):
     """
 
     @abstractmethod
-    async def get_user_history(self, email: str) -> Optional[UserHistory]:
+    async def get_user_history(self, email: str) -> UserHistory | None:
         """
         Retrieve a user's complete trip history.
 

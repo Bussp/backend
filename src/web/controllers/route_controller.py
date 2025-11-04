@@ -4,10 +4,10 @@ Route controller - API endpoints for bus routes and positions.
 This controller handles queries for real-time bus information.
 """
 
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from ...adapters.external.sptrans_adapter import SpTransAdapter
+from ...config import settings
 from ...core.services.route_service import RouteService
 from ..mappers import (
     map_bus_position_list_to_schema,
@@ -18,10 +18,24 @@ from ..schemas import BusPositionsRequest, BusPositionsResponse
 router = APIRouter(prefix="/routes", tags=["routes"])
 
 
+def get_route_service() -> RouteService:
+    """
+    Dependency that provides a RouteService instance.
+
+    Returns:
+        Configured RouteService instance
+    """
+    bus_provider = SpTransAdapter(
+        api_token=settings.sptrans_api_token,
+        base_url=settings.sptrans_base_url,
+    )
+    return RouteService(bus_provider)
+
+
 @router.post("/positions", response_model=BusPositionsResponse)
 async def get_bus_positions(
     request: BusPositionsRequest,
-    route_service: RouteService = Depends(),
+    route_service: RouteService = Depends(get_route_service),
 ) -> BusPositionsResponse:
     """
     Get current positions for specified bus routes.

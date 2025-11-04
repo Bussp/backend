@@ -5,9 +5,8 @@ These models map to database tables and are separate from domain models.
 """
 
 from datetime import datetime
-from typing import List
 
-from sqlalchemy import ForeignKey, Integer, String, Float, DateTime
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .connection import Base
@@ -28,7 +27,7 @@ class UserDB(Base):
     score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Relationship to trips
-    trips: Mapped[List["TripDB"]] = relationship(
+    trips: Mapped[list["TripDB"]] = relationship(
         "TripDB", back_populates="user", cascade="all, delete-orphan"
     )
 
