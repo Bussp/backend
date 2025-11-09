@@ -10,12 +10,15 @@ to return an object with `scalar_one_or_none()`.
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from datetime import datetime
 from unittest.mock import AsyncMock, create_autospec
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from src.adapters.database.connection import engine
+from src.adapters.database.models import TripDB, UserDB
 from src.adapters.repositories.history_repository_adapter import (
     UserHistoryRepositoryAdapter,
 )
@@ -44,6 +47,24 @@ class _DummyResult:
 
     def scalar_one_or_none(self):
         return self._value
+
+
+@pytest.fixture(scope="function")
+async def db_session_transactional() -> AsyncGenerator[AsyncSession, None]:
+    """Provide an AsyncSession inside a transaction that will be rolled back.
+
+    This fixture opens a connection from the project's engine, begins an
+    outer transaction, yields a session bound to that connection, and rolls
+    back at teardown so the DB is unchanged.
+    """
+    async with engine.connect() as conn:
+        trans = await conn.begin()
+        try:
+            session_factory = async_sessionmaker(bind=conn, class_=AsyncSession, expire_on_commit=False)
+            async with session_factory() as session:
+                yield session
+        finally:
+            await trans.rollback()
 
 
 @pytest.mark.asyncio
@@ -93,3 +114,37 @@ async def test_get_user_history_returns_none_when_missing_or_no_trips() -> None:
     # Act & Assert
     history_empty = await adapter_empty.get_user_history("empty@example.com")
     assert history_empty is None
+
+
+@pytest.mark.asyncio
+async def test_get_user_history_integration(db_session_transactional) -> None:
+    """Integration test that inserts ORM objects and verifies adapter mapping.
+
+    The transactional fixture rolls back changes after the test so the
+    database remains unchanged.
+    """
+    session = db_session_transactional
+
+    user = UserDB(email="int@example.com", name="Integration Test", password="x", score=0)
+    trip = TripDB(
+        email="int@example.com",
+        bus_line="8000",
+        bus_direction=1,
+        distance=1000,
+        score=10,
+        start_date=datetime(2025, 1, 1, 8, 0, 0),
+        end_date=datetime(2025, 1, 1, 9, 0, 0),
+    )
+
+    session.add_all([user, trip])
+    await session.flush()
+
+    adapter = UserHistoryRepositoryAdapter(session)
+
+    history = await adapter.get_user_history("int@example.com")
+
+    assert history is not None
+    assert history.email == "int@example.com"
+    assert len(history.trips) == 1
+    assert history.trips[0].bus_line == "8000"
+    assert history.trips[0].score == 10
