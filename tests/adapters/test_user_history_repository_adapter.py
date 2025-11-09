@@ -60,7 +60,9 @@ async def db_session_transactional() -> AsyncGenerator[AsyncSession, None]:
     async with engine.connect() as conn:
         trans = await conn.begin()
         try:
-            session_factory = async_sessionmaker(bind=conn, class_=AsyncSession, expire_on_commit=False)
+            session_factory = async_sessionmaker(
+                bind=conn, class_=AsyncSession, expire_on_commit=False
+            )
             async with session_factory() as session:
                 yield session
         finally:
