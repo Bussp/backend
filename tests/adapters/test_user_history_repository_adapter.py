@@ -11,20 +11,14 @@ to return an object with `scalar_one_or_none()`.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, create_autospec
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.adapters.repositories.history_repository_adapter import (
     UserHistoryRepositoryAdapter,
 )
-from src.core.ports.history_repository import UserHistoryRepository
-
-if TYPE_CHECKING:
-    from pytest_mock import MockerFixture
 
 
 class _DummyTrip:
@@ -79,7 +73,7 @@ async def test_get_user_history_returns_history_using_autospec() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_user_history_returns_none_when_missing_or_no_trips(mocker: "MockerFixture") -> None:
+async def test_get_user_history_returns_none_when_missing_or_no_trips() -> None:
     """Adapter should return None when DB returns None or when user.trips is empty."""
     # Arrange: case where execute returns None
     session_none = create_autospec(AsyncSession, instance=True)
