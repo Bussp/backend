@@ -10,11 +10,12 @@ to return an object with `scalar_one_or_none()`.
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from datetime import datetime
 from unittest.mock import AsyncMock
 
 import pytest
-from collections.abc import AsyncGenerator
+
 from src.adapters.repositories.history_repository_adapter import (
     UserHistoryRepositoryAdapter,
 )
@@ -56,6 +57,7 @@ async def db_session_transactional() -> AsyncGenerator:
     # Import heavy SQLAlchemy objects lazily to avoid collection-time import
     # of SQLAlchemy internals which can fail in some environments.
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
     from src.adapters.database.connection import engine
 
     async with engine.connect() as conn:
@@ -132,7 +134,7 @@ async def test_get_user_history_integration(db_session_transactional) -> None:
 
     # Import ORM models lazily to avoid importing SQLAlchemy at module import
     # time during pytest collection.
-    from src.adapters.database.models import UserDB, TripDB
+    from src.adapters.database.models import TripDB, UserDB
 
     user = UserDB(email="int@example.com", name="Integration Test", password="x", score=0)
     trip = TripDB(
