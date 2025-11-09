@@ -10,15 +10,11 @@ to return an object with `scalar_one_or_none()`.
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
 from datetime import datetime
 from unittest.mock import AsyncMock
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-
-from src.adapters.database.connection import engine
-from src.adapters.database.models import TripDB, UserDB
+from collections.abc import AsyncGenerator
 from src.adapters.repositories.history_repository_adapter import (
     UserHistoryRepositoryAdapter,
 )
@@ -50,13 +46,18 @@ class _DummyResult:
 
 
 @pytest.fixture(scope="function")
-async def db_session_transactional() -> AsyncGenerator[AsyncSession, None]:
+async def db_session_transactional() -> AsyncGenerator:
     """Provide an AsyncSession inside a transaction that will be rolled back.
 
     This fixture opens a connection from the project's engine, begins an
     outer transaction, yields a session bound to that connection, and rolls
     back at teardown so the DB is unchanged.
     """
+    # Import heavy SQLAlchemy objects lazily to avoid collection-time import
+    # of SQLAlchemy internals which can fail in some environments.
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+    from src.adapters.database.connection import engine
+
     async with engine.connect() as conn:
         trans = await conn.begin()
         try:
@@ -128,6 +129,10 @@ async def test_get_user_history_integration(db_session_transactional) -> None:
     database remains unchanged.
     """
     session = db_session_transactional
+
+    # Import ORM models lazily to avoid importing SQLAlchemy at module import
+    # time during pytest collection.
+    from src.adapters.database.models import UserDB, TripDB
 
     user = UserDB(email="int@example.com", name="Integration Test", password="x", score=0)
     trip = TripDB(
