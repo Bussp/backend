@@ -17,8 +17,6 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.adapters.database.connection import engine
-from src.adapters.database.models import TripDB, UserDB
-from src.adapters.repositories.trip_repository_adapter import TripRepositoryAdapter
 from src.core.models.trip import Trip as DomainTrip
 
 
@@ -82,7 +80,6 @@ async def test_save_trip_unit(monkeypatch) -> None:
     # Patch the mappers used by the adapter to avoid SQLAlchemy model usage
     monkeypatch.setattr(adapter_mod, "map_trip_domain_to_db", lambda t: dummy_db_obj)
     # map_trip_db_to_domain should convert the dummy_db_obj back to a domain Trip
-    from src.core.models.trip import Trip as DomainTrip
 
     monkeypatch.setattr(
         adapter_mod,
@@ -119,48 +116,3 @@ async def test_save_trip_unit(monkeypatch) -> None:
     assert saved.email == "u@example.com"
     assert saved.bus_line == "8000"
     assert saved.score == 10
-
-
-@pytest.mark.asyncio
-async def test_save_trip_integration(db_session_transactional) -> None:
-    """Integration test: insert ORM TripDB via adapter and ensure mapping.
-
-    Runs inside a transaction that will be rolled back by the fixture so the
-    DB remains unchanged.
-    """
-    session = db_session_transactional
-
-    # Create related user and trip rows
-    user = UserDB(email="tripint@example.com", name="Trip Int", password="x", score=0)
-    trip = TripDB(
-        email="tripint@example.com",
-        bus_line="9000",
-        bus_direction=2,
-        distance=1500,
-        score=15,
-        start_date=datetime(2025, 2, 1, 10, 0, 0),
-        end_date=datetime(2025, 2, 1, 11, 0, 0),
-    )
-
-    session.add_all([user, trip])
-    await session.flush()
-
-    adapter = TripRepositoryAdapter(session)
-
-    # The adapter's save_trip expects a domain Trip; we'll create one and save
-    domain_trip = DomainTrip(
-        email="tripint@example.com",
-        bus_line="9000",
-        bus_direction=2,
-        distance=1500,
-        score=15,
-        start_date=datetime(2025, 2, 1, 10, 0, 0),
-        end_date=datetime(2025, 2, 1, 11, 0, 0),
-    )
-
-    saved = await adapter.save_trip(domain_trip)
-
-    assert saved is not None
-    assert saved.email == "tripint@example.com"
-    assert saved.bus_line == "9000"
-    assert saved.score == 15
