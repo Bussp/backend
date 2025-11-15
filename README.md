@@ -74,7 +74,7 @@ mypy src/  # Verificar tipos com MyPy
 ### Qualidade de Código
 ```bash
 ruff check --fix src/ tests/  # Lint e correções automáticas
-ruff format src/ tests/        # Formatação
+ruff format src/ tests/       # Formatação
 ```
 
 ## 📚 Documentação

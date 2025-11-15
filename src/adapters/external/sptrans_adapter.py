@@ -148,7 +148,7 @@ class SpTransAdapter(BusProviderPort):
             raise ValueError(f"Route {route.bus_line} not found")
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get route details: {e}")
+            raise RuntimeError(f"Failed to get route details: {e}") from e
 
     async def close(self) -> None:
         """Close the HTTP client."""
