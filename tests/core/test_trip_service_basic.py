@@ -10,8 +10,8 @@ from unittest.mock import AsyncMock, create_autospec
 
 import pytest
 
-from src.core.models.user import User
 from src.core.models.trip import Trip
+from src.core.models.user import User
 from src.core.ports.trip_repository import TripRepository
 from src.core.ports.user_repository import UserRepository
 from src.core.services.trip_service import TripService
