@@ -6,8 +6,12 @@ with the SPTrans API.
 """
 
 from datetime import datetime
+from typing import Any
 
 import httpx
+from httpx import Response
+
+from src.config import settings
 
 from ...core.models.bus import BusPosition, BusRoute, RouteIdentifier
 from ...core.models.coordinate import Coordinate
@@ -15,25 +19,31 @@ from ...core.ports.bus_provider_port import BusProviderPort
 
 
 class SpTransAdapter(BusProviderPort):
-    """
-    HTTP client implementation of the BusProviderPort interface.
-
-    This adapter communicates with the SPTrans API to retrieve
-    real-time bus information.
-    """
-
-    def __init__(self, api_token: str, base_url: str = "http://api.olhovivo.sptrans.com.br/v2.1"):
+    def __init__(
+        self,
+        api_token: str | None = None,
+        base_url: str | None = None,
+    ):
         """
         Initialize the SPTrans adapter.
 
         Args:
-            api_token: API authentication token
-            base_url: Base URL for the SPTrans API
+            api_token: API authentication token (optional)
+            base_url: Base URL for the SPTrans API (optional)
         """
-        self.api_token = api_token
-        self.base_url = base_url
+        # se o parâmetro foi passado, usa ele;
+        # senão, usa o valor do settings carregado do .env
+        self.api_token = api_token or settings.sptrans_api_token
+        self.base_url = base_url or settings.sptrans_base_url
+
+        if not self.api_token:
+            raise ValueError(
+                "SPTransAdapter: nenhum token fornecido e SPTRANS_API_TOKEN não definido no ambiente/.env."
+            )
+
         self.session_token: str | None = None
-        self.client = httpx.AsyncClient(base_url=base_url, timeout=30.0)
+        self.client = httpx.AsyncClient(base_url=self.base_url, timeout=30.0)
+
 
     async def authenticate(self) -> bool:
         """
@@ -43,112 +53,148 @@ class SpTransAdapter(BusProviderPort):
             True if authentication successful, False otherwise
         """
         try:
-            response = await self.client.post("/Login/Autenticar", params={"token": self.api_token})
+            response: Response = await self.client.post(
+                "/Login/Autenticar",
+                params={"token": self.api_token},
+            )
 
             if response.status_code == 200 and response.text == "true":
-                # Store cookies for subsequent requests
+                # marca que autenticou com sucesso
                 self.session_token = "authenticated"
                 return True
 
             return False
 
         except Exception as e:
-            print(f"Authentication failed: {e}")
+            exc: Exception = e
+            print(f"Authentication failed: {exc}")
             return False
 
-    async def get_bus_positions(self, routes: list[RouteIdentifier]) -> list[BusPosition]:
+
+    async def get_bus_positions(self, bus_route: BusRoute) -> list[BusPosition]:
         """
-        Get real-time positions for specified bus routes.
+        Get real-time positions for a specific route using SPTrans data.
+
+        Pré-condição:
+            O método `authenticate()` deve ter sido chamado com sucesso antes de
+            usar este método.
 
         Args:
-            routes: List of route identifiers to query
+            bus_route: BusRoute(route_id=cl, route=RouteIdentifier)
 
         Returns:
-            List of current bus positions
-
-        Raises:
-            Exception: If API call fails
+            List of BusPosition objects.
         """
-        if not self.session_token:
-            raise RuntimeError("Not authenticated. Call authenticate() first.")
+        # Checagem defensiva opcional
+        if getattr(self, "session_token", None) != "authenticated":
+            raise RuntimeError(
+                "SPTrans client not authenticated. Call `authenticate()` first."
+            )
 
         positions: list[BusPosition] = []
 
-        # For each route, query the API
-        for route in routes:
-            try:
-                # SPTrans API expects: /Posicao/Linha?codigoLinha={line_code}
-                # In a real implementation, you'd need to map bus_line to line code
-                response = await self.client.get(
-                    "/Posicao/Linha", params={"codigoLinha": route.bus_line}
+        try:
+            line_code: int = bus_route.route_id
+
+            response: Response = await self.client.get(
+                "/Posicao/Linha",
+                params={"codigoLinha": line_code},
+            )
+
+            if response.status_code != 200:
+                raise RuntimeError(
+                    f"SPTrans returned status {response.status_code} for line {bus_route}"
                 )
 
-                if response.status_code == 200:
-                    data = response.json()
+            data: dict[str, Any] = response.json()
+            vehicles: list[dict[str, Any]] = data.get("vs", [])
 
-                    # Parse response according to SPTrans API format
-                    # hr: current time, vs: vehicles
-                    vehicles = data.get("vs", [])
+            for vehicle in vehicles:
+                pos: BusPosition = BusPosition(
+                    route=bus_route.route,
+                    position=Coordinate(
+                        latitude=vehicle["py"] / 1_000_000,
+                        longitude=vehicle["px"] / 1_000_000,
+                    ),
+                    time_updated=datetime.fromisoformat(vehicle["ta"]),
+                )
+                positions.append(pos)
 
-                    for vehicle in vehicles:
-                        # Convert from SPTrans format to domain model
-                        position = BusPosition(
-                            route=route,
-                            position=Coordinate(
-                                latitude=vehicle["py"] / 1_000_000,  # SPTrans uses lat * 10^6
-                                longitude=vehicle["px"] / 1_000_000,
-                            ),
-                            time_updated=(
-                                datetime.fromisoformat(vehicle["ta"])
-                                if isinstance(vehicle["ta"], str)
-                                else vehicle["ta"]
-                            ),
-                        )
-                        positions.append(position)
-
-            except Exception as e:
-                print(f"Failed to get positions for route {route.bus_line}: {e}")
-                continue
+        except Exception as e:
+            exc: Exception = e
+            print(f"Failed to get positions for bus_route {bus_route}: {exc}")
 
         return positions
 
+
     async def get_route_details(self, route: RouteIdentifier) -> BusRoute:
         """
-        Get detailed information about a route.
+        Resolve a RouteIdentifier into a BusRoute by fetching the internal SPTrans
+        'codigoLinha' (cl) using the `/Linha/BuscarLinhaSentido` endpoint.
+
+        Pré-condição:
+            O método `authenticate()` deve ter sido chamado com sucesso antes de
+            usar este método.
 
         Args:
-            route: Route identifier
+            route (RouteIdentifier): The logical bus route (line + direction)
+                used to query SPTrans.
 
         Returns:
-            Bus route details
+            BusRoute: A domain object containing the internal SPTrans line code (cl)
+            and the original RouteIdentifier.
 
         Raises:
-            Exception: If route not found or API fails
+            RuntimeError: If the SPTrans API returns an error status code,
+                if the route cannot be found, or if the provider returns an invalid
+                response format.
         """
-        if not self.session_token:
-            raise RuntimeError("Not authenticated. Call authenticate() first.")
-
-        try:
-            # SPTrans API: /Linha/Buscar?termosBusca={search_term}
-            response = await self.client.get(
-                "/Linha/Buscar", params={"termosBusca": route.bus_line}
+        # Checagem defensiva opcional
+        if getattr(self, "session_token", None) != "authenticated":
+            raise RuntimeError(
+                "SPTrans client not authenticated. Call `authenticate()` first."
             )
 
-            if response.status_code == 200:
-                data = response.json()
+        try:
+            response: Response = await self.client.get(
+                "/Linha/BuscarLinhaSentido",
+                params={
+                    "termosBusca": route.bus_line,
+                    "sentido": route.bus_direction,
+                },
+            )
 
-                # Assuming first match is the desired route
-                if data and len(data) > 0:
-                    route_data = data[0]
-                    return BusRoute(
-                        route_id=route_data["cl"],  # cl: route code
-                        route=route,
-                    )
+            if response.status_code != 200:
+                raise RuntimeError(
+                    f"SPTrans returned status {response.status_code} for line search."
+                )
 
-            raise ValueError(f"Route {route.bus_line} not found")
+            data: list[dict[str, Any]] = response.json()
+
+            if not isinstance(data, list) or len(data) == 0:
+                raise RuntimeError(
+                    f"No SPTrans line found for line={route.bus_line}, "
+                    f"direction={route.bus_direction}"
+                )
+
+            line_info: dict[str, Any] = data[0]
+
+            if "cl" not in line_info:
+                raise RuntimeError("Invalid SPTrans response: missing 'cl' field")
+
+            bus_route: BusRoute = BusRoute(
+                route_id=line_info["cl"],
+                route=route,
+            )
+
+            return bus_route
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get route details: {e}") from e
+            exc: Exception = e
+            raise RuntimeError(
+                f"Failed to resolve route details for {route}: {exc}"
+            ) from exc
+
 
     async def close(self) -> None:
         """Close the HTTP client."""
