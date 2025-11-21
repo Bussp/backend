@@ -17,9 +17,7 @@ async def test_authentication() -> None:
     print("Cookies recebidos:", adapter.client.cookies)
 
     assert ok is True, "A autenticação real falhou. Verifique seu TOKEN."
-    assert "apiCredentials" in adapter.client.cookies, (
-        "Cookie de credenciais não foi criado."
-    )
+    assert "apiCredentials" in adapter.client.cookies, "Cookie de credenciais não foi criado."
 
 
 @pytest.mark.asyncio
@@ -90,14 +88,12 @@ async def test_get_route_details_without_authentication():
     with pytest.raises(RuntimeError, match="not authenticated"):
         await adapter.get_route_details(route)
 
+
 @pytest.mark.asyncio
 async def test_get_bus_positions_without_authentication():
     adapter: SpTransAdapter = SpTransAdapter()
 
-    bus_route = BusRoute(
-        route_id=8075,
-        route=RouteIdentifier(bus_line="8075", bus_direction=1)
-    )
+    bus_route = BusRoute(route_id=8075, route=RouteIdentifier(bus_line="8075", bus_direction=1))
 
     with pytest.raises(RuntimeError, match="not authenticated"):
         await adapter.get_bus_positions(bus_route)

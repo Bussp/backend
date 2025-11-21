@@ -44,7 +44,6 @@ class SpTransAdapter(BusProviderPort):
         self.session_token: str | None = None
         self.client = httpx.AsyncClient(base_url=self.base_url, timeout=30.0)
 
-
     async def authenticate(self) -> bool:
         """
         Authenticate with the SPTrans API.
@@ -70,7 +69,6 @@ class SpTransAdapter(BusProviderPort):
             print(f"Authentication failed: {exc}")
             return False
 
-
     async def get_bus_positions(self, bus_route: BusRoute) -> list[BusPosition]:
         """
         Get real-time positions for a specific route using SPTrans data.
@@ -87,9 +85,7 @@ class SpTransAdapter(BusProviderPort):
         """
         # Checagem defensiva opcional
         if getattr(self, "session_token", None) != "authenticated":
-            raise RuntimeError(
-                "SPTrans client not authenticated. Call `authenticate()` first."
-            )
+            raise RuntimeError("SPTrans client not authenticated. Call `authenticate()` first.")
 
         positions: list[BusPosition] = []
 
@@ -126,7 +122,6 @@ class SpTransAdapter(BusProviderPort):
 
         return positions
 
-
     async def get_route_details(self, route: RouteIdentifier) -> BusRoute:
         """
         Resolve a RouteIdentifier into a BusRoute by fetching the internal SPTrans
@@ -151,9 +146,7 @@ class SpTransAdapter(BusProviderPort):
         """
         # Checagem defensiva opcional
         if getattr(self, "session_token", None) != "authenticated":
-            raise RuntimeError(
-                "SPTrans client not authenticated. Call `authenticate()` first."
-            )
+            raise RuntimeError("SPTrans client not authenticated. Call `authenticate()` first.")
 
         try:
             response: Response = await self.client.get(
@@ -191,10 +184,7 @@ class SpTransAdapter(BusProviderPort):
 
         except Exception as e:
             exc: Exception = e
-            raise RuntimeError(
-                f"Failed to resolve route details for {route}: {exc}"
-            ) from exc
-
+            raise RuntimeError(f"Failed to resolve route details for {route}: {exc}") from exc
 
     async def close(self) -> None:
         """Close the HTTP client."""

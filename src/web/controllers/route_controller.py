@@ -54,8 +54,7 @@ async def get_bus_positions(
     try:
         # Convert request schemas to domain RouteIdentifier objects
         route_identifiers: list[RouteIdentifier] = [
-            map_route_identifier_schema_to_domain(route_schema)
-            for route_schema in request.routes
+            map_route_identifier_schema_to_domain(route_schema) for route_schema in request.routes
         ]
 
         # Accumulate results from all routes

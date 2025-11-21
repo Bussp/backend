@@ -29,9 +29,7 @@ class Settings(BaseSettings):
     )
 
     # SPTrans API settings
-    sptrans_api_token: str = Field(
-        default="", validation_alias="SPTRANS_API_TOKEN"
-    )
+    sptrans_api_token: str = Field(default="", validation_alias="SPTRANS_API_TOKEN")
     sptrans_base_url: str = Field(
         default="http://api.olhovivo.sptrans.com.br/v2.1",
         validation_alias="SPTRANS_BASE_URL",
@@ -55,7 +53,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,  # aceita APP_NAME/app_name/etc.
-        extra="ignore",        # ignora envs desconhecidas
+        extra="ignore",  # ignora envs desconhecidas
     )
 
 

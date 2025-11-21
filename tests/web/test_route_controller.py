@@ -65,11 +65,7 @@ async def test_positions_endpoint_success(client: TestClient, mock_service: Rout
     mock_service.get_route_details.return_value = bus_route  # type: ignore
     mock_service.get_bus_positions.return_value = [position]  # type: ignore
 
-    payload = {
-        "routes": [
-            {"bus_line": "8075", "bus_direction": 1}
-        ]
-    }
+    payload = {"routes": [{"bus_line": "8075", "bus_direction": 1}]}
 
     # ----- Act -----
     response = client.post("/routes/positions", json=payload)
@@ -95,8 +91,7 @@ async def test_positions_endpoint_success(client: TestClient, mock_service: Rout
 
 @pytest.mark.asyncio
 async def test_positions_endpoint_error_returns_500(
-    client: TestClient,
-    mock_service: RouteService
+    client: TestClient, mock_service: RouteService
 ) -> None:
     """
     Testa se o controller retorna 500 caso o service levante exception.
@@ -104,11 +99,7 @@ async def test_positions_endpoint_error_returns_500(
 
     mock_service.get_route_details.side_effect = RuntimeError("boom")  # type: ignore
 
-    payload = {
-        "routes": [
-            {"bus_line": "8075", "bus_direction": 1}
-        ]
-    }
+    payload = {"routes": [{"bus_line": "8075", "bus_direction": 1}]}
 
     response = client.post("/routes/positions", json=payload)
 
