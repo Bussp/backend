@@ -18,19 +18,20 @@ Este projeto implementa um sistema gamificado onde usuários ganham pontos ao us
 
 ### Pré-requisitos
 
-- Python 3.11+
+- Python 3.12
 - pip
 
 ### Instalação e Execução
 
 1. **Clone o repositório**:
    ```bash
-   cd /home/kim/code/estudos/bussp
+   cd bussp
    ```
 
 2. **Crie um ambiente virtual**:
    ```bash
-   python -m venv venv
+   python3.12 -m venv venv # comando antigo: python -m venv venv
+
    source venv/bin/activate  # No Windows: venv\Scripts\activate
    ```
 
@@ -63,7 +64,7 @@ Este projeto implementa um sistema gamificado onde usuários ganham pontos ao us
 ### Testes
 ```bash
 pytest                              # Executar todos os testes
-pytest --cov=src --cov-report=html  # Com cobertura
+pytest --cov=src --cov-report=term  # Com cobertura
 ```
 
 ### Verificação de Tipos
