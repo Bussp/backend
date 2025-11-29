@@ -6,7 +6,6 @@ with the SPTrans API.
 """
 
 from datetime import datetime
-from typing import Any
 
 import httpx
 from httpx import Response
@@ -14,6 +13,8 @@ from httpx import Response
 from src.config import settings
 
 from ...core.models.bus import BusPosition, BusRoute, RouteIdentifier
+from ...adapters.external.models.SPTransPosResp import SPTransPositionsResponse, Vehicle
+from ...adapters.external.models.LineInfo import LineInfo
 from ...core.models.coordinate import Coordinate
 from ...core.ports.bus_provider_port import BusProviderPort
 
@@ -102,8 +103,9 @@ class SpTransAdapter(BusProviderPort):
                     f"SPTrans returned status {response.status_code} for line {bus_route}"
                 )
 
-            data: dict[str, Any] = response.json()
-            vehicles: list[dict[str, Any]] = data.get("vs", [])
+            response_data: SPTransPositionsResponse = response.json()
+
+            vehicles: list[Vehicle] = response_data["vs"]
 
             for vehicle in vehicles:
                 pos: BusPosition = BusPosition(
@@ -162,7 +164,7 @@ class SpTransAdapter(BusProviderPort):
                     f"SPTrans returned status {response.status_code} for line search."
                 )
 
-            data: list[dict[str, Any]] = response.json()
+            data: list[LineInfo] = response.json()
 
             if not isinstance(data, list) or len(data) == 0:
                 raise RuntimeError(
@@ -170,7 +172,7 @@ class SpTransAdapter(BusProviderPort):
                     f"direction={route.bus_direction}"
                 )
 
-            line_info: dict[str, Any] = data[0]
+            line_info: LineInfo = data[0]
 
             if "cl" not in line_info:
                 raise RuntimeError("Invalid SPTrans response: missing 'cl' field")
