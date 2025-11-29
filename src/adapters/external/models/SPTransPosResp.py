@@ -1,4 +1,4 @@
-from typing import TypedDict, List
+from typing import TypedDict
 
 
 class Vehicle(TypedDict):
@@ -11,4 +11,4 @@ class Vehicle(TypedDict):
 
 class SPTransPositionsResponse(TypedDict):
     hr: str           # horário da resposta
-    vs: List[Vehicle] # lista de veículos
+    vs: list[Vehicle] # lista de veículos

@@ -12,9 +12,9 @@ from httpx import Response
 
 from src.config import settings
 
-from ...core.models.bus import BusPosition, BusRoute, RouteIdentifier
-from ...adapters.external.models.SPTransPosResp import SPTransPositionsResponse, Vehicle
 from ...adapters.external.models.LineInfo import LineInfo
+from ...adapters.external.models.SPTransPosResp import SPTransPositionsResponse, Vehicle
+from ...core.models.bus import BusPosition, BusRoute, RouteIdentifier
 from ...core.models.coordinate import Coordinate
 from ...core.ports.bus_provider_port import BusProviderPort
 
