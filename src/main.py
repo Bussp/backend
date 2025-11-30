@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .adapters.database.connection import create_tables, get_db
 from .adapters.external.sptrans_adapter import SpTransAdapter
+from .adapters.repositories.gtfs_repository_adapter import GTFSRepositoryAdapter
 from .adapters.repositories.history_repository_adapter import (
     UserHistoryRepositoryAdapter,
 )
@@ -21,6 +22,7 @@ from .adapters.repositories.user_repository_adapter import UserRepositoryAdapter
 from .adapters.security.hashing import PasslibPasswordHasher
 from .config import settings
 from .core.ports.bus_provider_port import BusProviderPort
+from .core.ports.gtfs_repository import GTFSRepositoryPort
 from .core.ports.history_repository import UserHistoryRepository
 from .core.ports.password_hasher import PasswordHasherPort
 from .core.ports.trip_repository import TripRepository
@@ -122,6 +124,16 @@ def get_bus_provider() -> BusProviderPort:
     )
 
 
+def get_gtfs_repository() -> GTFSRepositoryPort:
+    """
+    Provide GTFSRepositoryPort implementation.
+
+    Returns:
+        GTFSRepositoryPort adapter instance
+    """
+    return GTFSRepositoryAdapter()
+
+
 # ===== Service Providers =====
 
 
@@ -160,17 +172,19 @@ def get_trip_service(
 
 def get_route_service(
     bus_provider: BusProviderPort = Depends(get_bus_provider),
+    gtfs_repository: GTFSRepositoryPort = Depends(get_gtfs_repository),
 ) -> RouteService:
     """
     Provide RouteService instance.
 
     Args:
         bus_provider: Bus provider port implementation
+        gtfs_repository: GTFS repository implementation
 
     Returns:
         RouteService instance
     """
-    return RouteService(bus_provider)
+    return RouteService(bus_provider, gtfs_repository)
 
 
 def get_score_service(

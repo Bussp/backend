@@ -108,6 +108,14 @@ class BusPositionsResponse(BaseModel):
     buses: list[BusPositionSchema] = Field(..., description="List of bus positions")
 
 
+class RouteShapeResponse(BaseModel):
+    """Response schema for route shape coordinates."""
+
+    route_id: str = Field(..., description="Route identifier")
+    shape_id: str = Field(..., description="GTFS shape identifier")
+    points: list[CoordinateSchema] = Field(..., description="Ordered list of coordinates")
+
+
 # ===== Ranking Schemas =====
 
 
