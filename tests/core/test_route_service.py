@@ -4,9 +4,7 @@ These tests verify that the RouteService correctly delegates to the
 GTFS repository and handles the response.
 """
 
-from unittest.mock import MagicMock, create_autospec
-
-import pytest
+from unittest.mock import create_autospec
 
 from src.core.models.coordinate import Coordinate
 from src.core.models.route_shape import RouteShape, RouteShapePoint

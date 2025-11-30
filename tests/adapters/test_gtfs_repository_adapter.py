@@ -4,14 +4,10 @@ These tests verify that the GTFS repository correctly retrieves route shapes
 from the SQLite GTFS database.
 """
 
-import sqlite3
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from src.adapters.repositories.gtfs_repository_adapter import GTFSRepositoryAdapter
-from src.core.models.coordinate import Coordinate
-from src.core.models.route_shape import RouteShape, RouteShapePoint
+from src.core.models.route_shape import RouteShape
 
 
 def test_get_route_shape_found() -> None:
