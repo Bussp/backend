@@ -43,23 +43,26 @@ async def test_create_trip_calculates_score_correctly() -> None:
 
     service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
 
+    distance = 1000
+
     # Act
     trip = await service.create_trip(
         email="test@example.com",
         bus_line="8000",
         bus_direction=1,
-        distance=1000,
+        distance=distance,
         trip_date=datetime(2025, 10, 16, 10, 0, 0),
     )
 
     # Assert
-    assert trip.score == 10
+    expected_score = (distance // 1000) * 77
+    assert trip.score == expected_score
     assert trip.email == "test@example.com"
     assert trip.bus_line == "8000"
 
     user_repo.get_user_by_email.assert_awaited_once_with("test@example.com")
     trip_repo.save_trip.assert_awaited_once()
-    user_repo.add_user_score.assert_awaited_once_with("test@example.com", 10)
+    user_repo.add_user_score.assert_awaited_once_with("test@example.com", expected_score)
 
 
 @pytest.mark.asyncio
@@ -81,18 +84,21 @@ async def test_create_trip_with_pytest_mock(mocker: "MockerFixture") -> None:
 
     service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
 
+    distance = 2500
+
     # Act
     trip = await service.create_trip(
         email="alice@example.com",
         bus_line="9000",
         bus_direction=2,
-        distance=2500,
+        distance=distance,
         trip_date=datetime(2025, 10, 16, 14, 30, 0),
     )
 
     # Assert
-    assert trip.score == 25
-    user_repo.add_user_score.assert_awaited_once_with("alice@example.com", 25)  # type: ignore[attr-defined]
+    expected_score = (distance // 1000) * 77
+    assert trip.score == expected_score
+    user_repo.add_user_score.assert_awaited_once_with("alice@example.com", expected_score)  # type: ignore[attr-defined]
 
 
 @pytest.mark.asyncio
@@ -160,12 +166,12 @@ async def test_multiple_trips(mocker: "MockerFixture") -> None:
     )
 
     # Assert
-    assert trip1.score == 5
-    assert trip2.score == 15
+    assert trip1.score == 0
+    assert trip2.score == 77
     assert trip_repo.save_trip.await_count == 2  # type: ignore[attr-defined]
     assert user_repo.add_user_score.await_count == 2  # type: ignore[attr-defined]
-    user_repo.add_user_score.assert_any_await("bob@example.com", 5)  # type: ignore[attr-defined]
-    user_repo.add_user_score.assert_any_await("bob@example.com", 15)  # type: ignore[attr-defined]
+    user_repo.add_user_score.assert_any_await("bob@example.com", 0)  # type: ignore[attr-defined]
+    user_repo.add_user_score.assert_any_await("bob@example.com", 77)  # type: ignore[attr-defined]
 
 
 @pytest.mark.asyncio

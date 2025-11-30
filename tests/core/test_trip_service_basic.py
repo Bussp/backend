@@ -59,23 +59,26 @@ async def test_create_trip_single_user() -> None:
 
     service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
 
+    distance = 1500  # metros
+    expected_score = (distance // 1000) * 77  # 77 pontos por km inteiro
+
     # Act
     trip = await service.create_trip(
         email="user@example.com",
         bus_line="9000",
         bus_direction=2,
-        distance=1500,
+        distance=distance,
         trip_date=datetime(2025, 11, 15, 12, 0, 0),
     )
 
     # Assert
     assert isinstance(trip, Trip)
-    assert trip.score == 15
+    assert trip.score == expected_score
     assert trip.email == "user@example.com"
 
     user_repo.get_user_by_email.assert_awaited_once_with("user@example.com")
     trip_repo.save_trip.assert_awaited_once()  # type: ignore[attr-defined]
-    user_repo.add_user_score.assert_awaited_once_with("user@example.com", 15)  # type: ignore[attr-defined]
+    user_repo.add_user_score.assert_awaited_once_with("user@example.com", expected_score)  # type: ignore[attr-defined]
 
 
 @pytest.mark.asyncio
@@ -165,6 +168,6 @@ async def test_create_trip_very_large_distance() -> None:
     )
 
     # Assert
-    expected_score = big_distance // 100
+    expected_score = (big_distance // 1000) * 77  # 77 pontos por km inteiro
     assert trip.score == expected_score
     user_repo.add_user_score.assert_awaited_once_with("big@example.com", expected_score)  # type: ignore[attr-defined]
