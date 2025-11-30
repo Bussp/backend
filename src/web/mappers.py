@@ -7,11 +7,14 @@ maintaining the separation of concerns.
 
 from ..core.models.bus import BusPosition, RouteIdentifier
 from ..core.models.coordinate import Coordinate
+from ..core.models.route_shape import RouteShape, RouteShapePoint
 from ..core.models.user import User
 from .schemas import (
     BusPositionSchema,
     CoordinateSchema,
     RouteIdentifierSchema,
+    RouteShapePointSchema,
+    RouteShapeResponse,
     UserResponse,
 )
 
@@ -133,3 +136,40 @@ def map_bus_position_list_to_schema(
         List of BusPositionSchema for API
     """
     return [map_bus_position_domain_to_schema(pos) for pos in positions]
+
+
+# ===== Route Shape Mappers =====
+
+
+def map_route_shape_point_to_schema(point: RouteShapePoint) -> RouteShapePointSchema:
+    """
+    Map a RouteShapePoint domain model to a RouteShapePointSchema.
+
+    Args:
+        point: RouteShapePoint domain model
+
+    Returns:
+        RouteShapePointSchema for API
+    """
+    return RouteShapePointSchema(
+        coordinate=map_coordinate_domain_to_schema(point.coordinate),
+        sequence=point.sequence,
+        distance_traveled=point.distance_traveled,
+    )
+
+
+def map_route_shape_to_response(shape: RouteShape) -> RouteShapeResponse:
+    """
+    Map a RouteShape domain model to a RouteShapeResponse.
+
+    Args:
+        shape: RouteShape domain model
+
+    Returns:
+        RouteShapeResponse for API
+    """
+    return RouteShapeResponse(
+        route_id=shape.route_id,
+        shape_id=shape.shape_id,
+        points=[map_route_shape_point_to_schema(point) for point in shape.points],
+    )

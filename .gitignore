@@ -48,7 +48,7 @@ coverage.xml
 dmypy.json
 
 # Database
-*.db
+bussp.db
 *.sqlite
 *.sqlite3
 
