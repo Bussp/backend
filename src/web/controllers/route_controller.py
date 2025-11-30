@@ -77,6 +77,7 @@ async def get_route_details_endpoint(
                 route_id=bus_route.route_id,
                 route=RouteIdentifierSchema(
                     bus_line=bus_route.route.bus_line,
+                    bus_direction=bus_route.route.bus_direction,
                 ),
             )
             for bus_route in bus_routes
