@@ -94,15 +94,15 @@ async def get_route_shape(
     """
     try:
         shape = route_service.get_route_shape(route_id)
-        
+
         if shape is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Route '{route_id}' not found in GTFS database",
             )
-        
+
         return map_route_shape_to_response(shape)
-    
+
     except HTTPException:
         raise
     except Exception as e:

@@ -27,20 +27,20 @@ class GTFSRepositoryAdapter(GTFSRepositoryPort):
             # First, get the shape_id for this route
             cursor = conn.execute(
                 """
-                SELECT DISTINCT shape_id 
-                FROM trips 
+                SELECT DISTINCT shape_id
+                FROM trips
                 WHERE route_id = ?
                 LIMIT 1
                 """,
                 (route_id,),
             )
-            
+
             row = cursor.fetchone()
             if not row:
                 return None
-            
+
             shape_id = row["shape_id"]
-            
+
             # Now get all shape points for this shape_id
             cursor = conn.execute(
                 """
@@ -51,7 +51,7 @@ class GTFSRepositoryAdapter(GTFSRepositoryPort):
                 """,
                 (shape_id,),
             )
-            
+
             points = []
             for row in cursor.fetchall():
                 point = RouteShapePoint(
@@ -63,10 +63,10 @@ class GTFSRepositoryAdapter(GTFSRepositoryPort):
                     distance_traveled=row["shape_dist_traveled"],
                 )
                 points.append(point)
-            
+
             if not points:
                 return None
-            
+
             return RouteShape(
                 route_id=route_id,
                 shape_id=shape_id,

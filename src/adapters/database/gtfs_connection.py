@@ -5,10 +5,9 @@ This module provides synchronous SQLite connection to the GTFS database.
 """
 
 import sqlite3
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
-
 
 # Path to GTFS database
 GTFS_DB_PATH = Path(__file__).parent.parent.parent.parent / "gtfs.db"
