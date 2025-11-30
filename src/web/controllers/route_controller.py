@@ -23,7 +23,7 @@ from ..schemas import (
     BusRoutesDetailsRequest,
     BusRoutesDetailsResponse,
     RouteIdentifierSchema,
-    RouteShapeResponse
+    RouteShapeResponse,
 )
 
 router = APIRouter(prefix="/routes", tags=["routes"])
@@ -59,8 +59,7 @@ async def get_route_details_endpoint(
     try:
         # Schemas -> domínio (RouteIdentifier)
         route_identifiers: list[RouteIdentifier] = [
-            map_route_identifier_schema_to_domain(route_schema)
-            for route_schema in request.routes
+            map_route_identifier_schema_to_domain(route_schema) for route_schema in request.routes
         ]
 
         bus_routes: list[BusRoute] = []
@@ -119,9 +118,7 @@ async def get_bus_positions(
                 route=route_identifier,
             )
 
-            route_positions: list[BusPosition] = await route_service.get_bus_positions(
-                bus_route
-            )
+            route_positions: list[BusPosition] = await route_service.get_bus_positions(bus_route)
             all_positions.extend(route_positions)
 
         # Domínio -> schemas

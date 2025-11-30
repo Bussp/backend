@@ -96,7 +96,6 @@ async def test_get_bus_positions_8075_direction_1() -> None:
         assert isinstance(pos.position.longitude, float | int)
 
 
-
 @pytest.mark.asyncio
 async def test_get_route_details_without_authentication():
     adapter: SpTransAdapter = SpTransAdapter(api_token="INVALID")

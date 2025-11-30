@@ -121,6 +121,7 @@ class BusPositionsResponse(BaseModel):
 
     buses: list[BusPositionSchema] = Field(..., description="List of bus positions")
 
+
 class BusRoutesDetailsRequest(BaseModel):
     """Request schema for resolving route details."""
 
@@ -135,6 +136,7 @@ class BusRoutesDetailsResponse(BaseModel):
     routes: list[BusRouteSchema] = Field(
         ..., description="List of resolved routes with provider IDs"
     )
+
 
 class RouteShapeResponse(BaseModel):
     """Response schema for route shape coordinates."""
