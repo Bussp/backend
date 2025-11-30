@@ -62,7 +62,11 @@ class TripService:
             raise ValueError(f"User with email {email} not found")
 
         # Calculate score (1 point per 100 meters)
-        score = distance // 100
+        # Validate distance: negative distances are not allowed
+        if distance < 0:
+            raise ValueError("distance must be non-negative")
+
+        score = (distance // 1000) * 77
 
         # Create trip
         trip = Trip(
