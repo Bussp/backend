@@ -108,20 +108,12 @@ class BusPositionsResponse(BaseModel):
     buses: list[BusPositionSchema] = Field(..., description="List of bus positions")
 
 
-class RouteShapePointSchema(BaseModel):
-    """Schema for a single point in a route shape."""
-
-    coordinate: CoordinateSchema
-    sequence: int = Field(..., description="Point sequence in the route")
-    distance_traveled: float | None = Field(None, description="Distance traveled along the route")
-
-
 class RouteShapeResponse(BaseModel):
     """Response schema for route shape coordinates."""
 
     route_id: str = Field(..., description="Route identifier")
     shape_id: str = Field(..., description="GTFS shape identifier")
-    points: list[RouteShapePointSchema] = Field(..., description="Ordered list of coordinates")
+    points: list[CoordinateSchema] = Field(..., description="Ordered list of coordinates")
 
 
 # ===== Ranking Schemas =====
