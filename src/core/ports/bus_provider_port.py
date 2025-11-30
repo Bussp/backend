@@ -40,7 +40,7 @@ class BusProviderPort(ABC):
         pass
 
     @abstractmethod
-    async def get_route_details(self, route: RouteIdentifier) -> BusRoute:
+    async def get_route_details(self, route: RouteIdentifier) -> list[BusRoute]:
         """
         Get detailed information about a specific route.
 

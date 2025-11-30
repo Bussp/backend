@@ -124,39 +124,29 @@ class SpTransAdapter(BusProviderPort):
 
         return positions
 
-    async def get_route_details(self, route: RouteIdentifier) -> BusRoute:
+    async def get_route_details(self, route: RouteIdentifier) -> list[BusRoute]:
         """
-        Resolve a RouteIdentifier into a BusRoute by fetching the internal SPTrans
-        'codigoLinha' (cl) using the `/Linha/BuscarLinhaSentido` endpoint.
-
-        Pré-condição:
-            O método `authenticate()` deve ter sido chamado com sucesso antes de
-            usar este método.
+        Resolve a logical bus line (bus_line) into all SPTrans BusRoute entries using
+        the `/Linha/Buscar` endpoint.
 
         Args:
-            route (RouteIdentifier): The logical bus route (line + direction)
-                used to query SPTrans.
+            route (RouteIdentifier): Logical bus line (ex: "8000")
 
         Returns:
-            BusRoute: A domain object containing the internal SPTrans line code (cl)
-            and the original RouteIdentifier.
+            list[BusRoute]: Todas as variantes da linha retornadas pela SPTrans.
 
         Raises:
-            RuntimeError: If the SPTrans API returns an error status code,
-                if the route cannot be found, or if the provider returns an invalid
-                response format.
+            RuntimeError: Se a requisição falhar, vier vazia ou inválida.
         """
-        # Checagem defensiva opcional
+
+        # Verifica se está autenticado
         if getattr(self, "session_token", None) != "authenticated":
             raise RuntimeError("SPTrans client not authenticated. Call `authenticate()` first.")
 
         try:
             response: Response = await self.client.get(
-                "/Linha/BuscarLinhaSentido",
-                params={
-                    "termosBusca": route.bus_line,
-                    "sentido": route.bus_direction,
-                },
+                "/Linha/Buscar",
+                params={"termosBusca": route.bus_line},
             )
 
             if response.status_code != 200:
@@ -167,27 +157,33 @@ class SpTransAdapter(BusProviderPort):
             data: list[LineInfo] = response.json()
 
             if not isinstance(data, list) or len(data) == 0:
-                raise RuntimeError(
-                    f"No SPTrans line found for line={route.bus_line}, "
-                    f"direction={route.bus_direction}"
+                raise RuntimeError(f"No SPTrans line found for line={route.bus_line}")
+
+            bus_routes: list[BusRoute] = []
+
+            for item in data:
+                # Validate based on TypedDict keys
+                if "cl" not in item or "lt" not in item:
+                    continue  # Skip invalid entries
+
+                line_code = item["cl"]
+                line_text = item["lt"]
+                line_dir = item["sl"]
+
+                bus_routes.append(
+                    BusRoute(
+                        route_id=line_code,
+                        route=RouteIdentifier(bus_line=line_text, bus_direction=line_dir),
+                    )
                 )
 
-            line_info: LineInfo = data[0]
+            if not bus_routes:
+                raise RuntimeError(
+                    f"Invalid SPTrans response for line={route.bus_line}: "
+                    "missing required fields"
+                )
 
-            if "cl" not in line_info:
-                raise RuntimeError("Invalid SPTrans response: missing 'cl' field")
-
-            bus_route: BusRoute = BusRoute(
-                route_id=line_info["cl"],
-                route=route,
-            )
-
-            return bus_route
+            return bus_routes
 
         except Exception as e:
-            exc: Exception = e
-            raise RuntimeError(f"Failed to resolve route details for {route}: {exc}") from exc
-
-    async def close(self) -> None:
-        """Close the HTTP client."""
-        await self.client.aclose()
+            raise RuntimeError(f"Failed to resolve route details for {route}: {e}") from e

@@ -16,7 +16,12 @@ class RouteIdentifierSchema(BaseModel):
     """Schema for route identifier."""
 
     bus_line: str = Field(..., description="Bus line")
-    bus_direction: int = Field(..., description="Direction", ge=1, le=2)
+    bus_direction: int = Field(
+        1,  # default
+        description="Direction (1 = ida, 2 = volta)",
+        ge=1,
+        le=2,
+    )
 
     model_config = {"populate_by_name": True}
 
@@ -36,6 +41,13 @@ class BusPositionSchema(BaseModel):
     time_updated: datetime = Field(..., description="Last update timestamp")
 
     model_config = {"populate_by_name": True}
+
+
+class BusRouteSchema(BaseModel):
+    """Schema for a resolved bus route (provider-specific ID + identifier)."""
+
+    route_id: int = Field(..., description="Provider-specific route identifier")
+    route: RouteIdentifierSchema
 
 
 # ===== User Management Schemas =====
@@ -99,13 +111,33 @@ class CreateTripResponse(BaseModel):
 class BusPositionsRequest(BaseModel):
     """Request schema for querying bus positions."""
 
-    routes: list[RouteIdentifierSchema] = Field(..., description="List of routes to query")
+    routes: list[BusRouteSchema] = Field(
+        ..., description="List of resolved routes (with route_id) to query positions"
+    )
 
 
 class BusPositionsResponse(BaseModel):
     """Response schema for bus positions."""
 
     buses: list[BusPositionSchema] = Field(..., description="List of bus positions")
+
+
+
+class BusRoutesDetailsRequest(BaseModel):
+    """Request schema for resolving route details."""
+
+    routes: list[RouteIdentifierSchema] = Field(
+        ..., description="List of routes (line + direction) to resolve"
+    )
+
+
+class BusRoutesDetailsResponse(BaseModel):
+    """Response schema for route details."""
+
+    routes: list[BusRouteSchema] = Field(
+        ..., description="List of resolved routes with provider IDs"
+    )
+
 
 
 # ===== Ranking Schemas =====

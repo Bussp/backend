@@ -40,7 +40,7 @@ class RouteService:
         # Get positions
         return await self.bus_provider.get_bus_positions(bus_route)
 
-    async def get_route_details(self, route: RouteIdentifier) -> BusRoute:
+    async def get_route_details(self, route: RouteIdentifier) -> list[BusRoute]:
         """
         Get detailed information about a route.
 

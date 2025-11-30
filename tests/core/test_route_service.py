@@ -72,17 +72,20 @@ async def test_get_route_details_calls_auth_and_provider() -> None:
         route=route_identifier,
     )
 
-    raw_provider.get_route_details.return_value = expected_bus_route  # type: ignore[assignment]
+    expected_routes: list[BusRoute] = [expected_bus_route]
+
+    # agora o provider também retorna lista
+    raw_provider.get_route_details.return_value = expected_routes  # type: ignore[assignment]
 
     service: RouteService = RouteService(bus_provider=bus_provider)
 
     # Act
-    result: BusRoute = await service.get_route_details(route_identifier)
+    result: list[BusRoute] = await service.get_route_details(route_identifier)
 
     # Assert
     raw_provider.authenticate.assert_awaited_once()
     raw_provider.get_route_details.assert_awaited_once_with(route_identifier)
-    assert result == expected_bus_route
+    assert result == expected_routes
 
 
 @pytest.mark.asyncio
