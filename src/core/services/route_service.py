@@ -25,7 +25,7 @@ class RouteService:
         self.bus_provider = bus_provider
         self.gtfs_repository = gtfs_repository
 
-    async def get_bus_positions(self, routes: list[RouteIdentifier]) -> list[BusPosition]:
+    async def get_bus_positions(self, bus_route: BusRoute) -> list[BusPosition]:
         """
         Get current positions for specified bus routes.
 
@@ -42,9 +42,9 @@ class RouteService:
         await self.bus_provider.authenticate()
 
         # Get positions
-        return await self.bus_provider.get_bus_positions(routes)
+        return await self.bus_provider.get_bus_positions(bus_route)
 
-    async def get_route_details(self, route: RouteIdentifier) -> BusRoute:
+    async def get_route_details(self, route: RouteIdentifier) -> list[BusRoute]:
         """
         Get detailed information about a route.
 
