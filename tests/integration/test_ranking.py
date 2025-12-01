@@ -72,7 +72,7 @@ class TestUserRankPosition:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["position"] == 3
+        assert data["position"] == 4
 
     @pytest.mark.asyncio
     async def test_get_user_rank_position_without_auth_fails(

@@ -179,19 +179,20 @@ class TestCreateTrip:
         }
         auth = await create_user_and_login(client, user_data)
 
-        trip_data = CreateTripRequest(
-            email=user_data["email"],
-            route=RouteIdentifierSchema(
-                bus_line="8000",
-                bus_direction=1,
-            ),
-            distance=-1000,
-            data=datetime.now(timezone.utc),
-        )
+        # Use raw dict to bypass Pydantic validation and test API validation
+        trip_data = {
+            "email": user_data["email"],
+            "route": {
+                "bus_line": "8000",
+                "bus_direction": 1,
+            },
+            "distance": -1000,
+            "data": datetime.now(timezone.utc).isoformat(),
+        }
 
         response = await client.post(
             "/trips/",
-            json=trip_data.model_dump(mode="json"),
+            json=trip_data,
             headers=auth["headers"],
         )
 
@@ -216,19 +217,20 @@ class TestCreateTrip:
         }
         auth = await create_user_and_login(client, user_data)
 
-        trip_data = CreateTripRequest(
-            email=user_data["email"],
-            route=RouteIdentifierSchema(
-                bus_line="8000",
-                bus_direction=3,
-            ),
-            distance=1000,
-            data=datetime.now(timezone.utc),
-        )
+        # Use raw dict to bypass Pydantic validation and test API validation
+        trip_data = {
+            "email": user_data["email"],
+            "route": {
+                "bus_line": "8000",
+                "bus_direction": 3,
+            },
+            "distance": 1000,
+            "data": datetime.now(timezone.utc).isoformat(),
+        }
 
         response = await client.post(
             "/trips/",
-            json=trip_data.model_dump(mode="json"),
+            json=trip_data,
             headers=auth["headers"],
         )
 

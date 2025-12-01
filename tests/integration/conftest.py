@@ -68,7 +68,9 @@ async def test_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture
-async def client(test_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+async def client(
+    test_db: AsyncSession
+) -> AsyncGenerator[AsyncClient, None]:
     """
     Create test HTTP client.
 
@@ -81,6 +83,7 @@ async def client(test_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)  # type: ignore[arg-type]
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+
 
 async def create_user_and_login(
     client: AsyncClient,
@@ -114,6 +117,21 @@ async def create_user_and_login(
         "headers": {"Authorization": f"Bearer {token_data['access_token']}"},
         "user": user_data,
     }
+
+
+@pytest.fixture
+def set_sptrans_api_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    Set a fake SPTrans API token for testing.
+
+    This patches the settings object directly since it's already instantiated
+    at module load time. Patching the environment variable alone won't work
+    because settings.sptrans_api_token is already resolved.
+    """
+    monkeypatch.setattr(
+        "src.config.settings.sptrans_api_token",
+        "fake-test-token",
+    )
 
 
 async def create_test_user_in_db(

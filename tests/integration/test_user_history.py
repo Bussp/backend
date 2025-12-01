@@ -72,6 +72,7 @@ class TestUserHistory:
         client: AsyncClient,
     ) -> None:
         user_data = {
+            "name": "Test User",
             "email": "test@example.com",
             "password": "secure_password_123",
         }
@@ -106,7 +107,7 @@ class TestUserHistory:
         self,
         client: AsyncClient,
     ) -> None:
-        user_data  = {
+        user_data = {
             "name": "Test User",
             "email": "test@example.com",
             "password": "securepassword123",
