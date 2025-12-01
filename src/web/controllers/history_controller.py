@@ -4,11 +4,13 @@ History controller - API endpoints for user trip history.
 This controller handles queries for user trip history.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...adapters.database.connection import get_db
-from ...adapters.repositories.history_repository_adapter import UserHistoryRepositoryAdapter
+from ...adapters.repositories.history_repository_adapter import (
+    UserHistoryRepositoryAdapter,
+)
 from ...core.models.user import User
 from ...core.services.history_service import HistoryService
 from ..schemas import HistoryRequest, HistoryResponse, TripHistoryEntry
@@ -48,22 +50,14 @@ async def get_user_history(
         current_user: Authenticated user (from JWT token)
 
     Returns:
-        User's trip history with dates and scores
-
-    Raises:
-        HTTPException: If user not found or has no history
+        User's trip history with dates and scores (empty list if no history)
     """
     dates, scores = await history_service.get_user_history_summary(request.email)
 
-    if not dates:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No history found for user",
-        )
-
-    # Combine dates and scores into trip entries
+    # Combine dates and scores into trip entries (returns empty list if no history)
     trips = [
-        TripHistoryEntry(date=date, score=score) for date, score in zip(dates, scores, strict=False)
+        TripHistoryEntry(date=date, score=score)
+        for date, score in zip(dates, scores, strict=False)
     ]
 
     return HistoryResponse(trips=trips)
