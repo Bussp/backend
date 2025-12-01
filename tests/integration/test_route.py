@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -45,9 +45,7 @@ class TestRouteDetails:
                 ]
             )
 
-            response = await client.post(
-                "/routes/details", json=request_data.model_dump()
-            )
+            response = await client.post("/routes/details", json=request_data.model_dump())
 
             assert response.status_code == 200
             data = response.json()
@@ -100,9 +98,7 @@ class TestRouteDetails:
                 ]
             )
 
-            response = await client.post(
-                "/routes/details", json=request_data.model_dump()
-            )
+            response = await client.post("/routes/details", json=request_data.model_dump())
 
             assert response.status_code == 200
             data = response.json()
@@ -135,9 +131,7 @@ class TestRouteDetails:
                 ]
             )
 
-            response = await client.post(
-                "/routes/details", json=request_data.model_dump()
-            )
+            response = await client.post("/routes/details", json=request_data.model_dump())
 
             assert response.status_code == 200
             data = response.json()
@@ -166,9 +160,7 @@ class TestRouteDetails:
                 ]
             )
 
-            response = await client.post(
-                "/routes/details", json=request_data.model_dump()
-            )
+            response = await client.post("/routes/details", json=request_data.model_dump())
 
             assert response.status_code == 500
             assert "Failed to retrieve route details" in response.json()["detail"]
@@ -185,9 +177,7 @@ class TestRouteDetails:
         ):
             request_data = BusRoutesDetailsRequest(routes=[])
 
-            response = await client.post(
-                "/routes/details", json=request_data.model_dump()
-            )
+            response = await client.post("/routes/details", json=request_data.model_dump())
 
             assert response.status_code == 200
             assert response.json()["routes"] == []
@@ -203,12 +193,12 @@ class TestBusPositions:
             BusPosition(
                 route=RouteIdentifier(bus_line="8000", bus_direction=1),
                 position=Coordinate(latitude=-23.550520, longitude=-46.633308),
-                time_updated=datetime.now(timezone.utc),
+                time_updated=datetime.now(UTC),
             ),
             BusPosition(
                 route=RouteIdentifier(bus_line="8000", bus_direction=1),
                 position=Coordinate(latitude=-23.551234, longitude=-46.634567),
-                time_updated=datetime.now(timezone.utc),
+                time_updated=datetime.now(UTC),
             ),
         ]
 
@@ -233,9 +223,7 @@ class TestBusPositions:
                 ]
             )
 
-            response = await client.post(
-                "/routes/positions", json=request_data.model_dump()
-            )
+            response = await client.post("/routes/positions", json=request_data.model_dump())
 
             assert response.status_code == 200
             data = response.json()
@@ -279,9 +267,7 @@ class TestBusPositions:
                 ]
             )
 
-            response = await client.post(
-                "/routes/positions", json=request_data.model_dump()
-            )
+            response = await client.post("/routes/positions", json=request_data.model_dump())
 
             assert response.status_code == 500
             assert "Failed to retrieve bus positions" in response.json()["detail"]
@@ -313,9 +299,7 @@ class TestBusPositions:
                 ]
             )
 
-            response = await client.post(
-                "/routes/positions", json=request_data.model_dump()
-            )
+            response = await client.post("/routes/positions", json=request_data.model_dump())
 
             assert response.status_code == 200
             data = response.json()
@@ -333,14 +317,14 @@ class TestBusPositions:
             BusPosition(
                 route=RouteIdentifier(bus_line="8000", bus_direction=1),
                 position=Coordinate(latitude=-23.550520, longitude=-46.633308),
-                time_updated=datetime.now(timezone.utc),
+                time_updated=datetime.now(UTC),
             ),
         ]
         mock_positions_9000 = [
             BusPosition(
                 route=RouteIdentifier(bus_line="9000", bus_direction=2),
                 position=Coordinate(latitude=-23.560520, longitude=-46.643308),
-                time_updated=datetime.now(timezone.utc),
+                time_updated=datetime.now(UTC),
             ),
         ]
 
@@ -369,9 +353,7 @@ class TestBusPositions:
                 ]
             )
 
-            response = await client.post(
-                "/routes/positions", json=request_data.model_dump()
-            )
+            response = await client.post("/routes/positions", json=request_data.model_dump())
 
             assert response.status_code == 200
             data = response.json()
@@ -401,9 +383,7 @@ class TestBusPositions:
                 ]
             )
 
-            response = await client.post(
-                "/routes/positions", json=request_data.model_dump()
-            )
+            response = await client.post("/routes/positions", json=request_data.model_dump())
 
             assert response.status_code == 500
 
@@ -446,9 +426,7 @@ class TestBusPositions:
         ):
             request_data = BusPositionsRequest(routes=[])
 
-            response = await client.post(
-                "/routes/positions", json=request_data.model_dump()
-            )
+            response = await client.post("/routes/positions", json=request_data.model_dump())
 
             assert response.status_code == 200
             assert response.json()["buses"] == []

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.web.schemas import CreateTripRequest, RouteIdentifierSchema
 
-from .conftest import create_user_and_login, create_test_user_in_db
+from .conftest import create_test_user_in_db, create_user_and_login
 
 
 class TestUserRankPosition:
@@ -57,7 +57,7 @@ class TestUserRankPosition:
             email=user_data["email"],
             route=RouteIdentifierSchema(bus_line="8000", bus_direction=1),
             distance=0,
-            data=datetime.now(timezone.utc),
+            data=datetime.now(UTC),
         )
         await client.post(
             "/trips/", json=trip_data.model_dump(mode="json"), headers=auth["headers"]
@@ -91,7 +91,6 @@ class TestUserRankPosition:
 
 
 class TestGlobalRanking:
-
     @pytest.mark.asyncio
     async def test_get_global_ranking_should_work(
         self,

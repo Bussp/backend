@@ -68,9 +68,7 @@ async def test_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture
-async def client(
-    test_db: AsyncSession
-) -> AsyncGenerator[AsyncClient, None]:
+async def client(test_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """
     Create test HTTP client.
 

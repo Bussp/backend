@@ -1,8 +1,7 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.web.schemas import (
     CreateTripRequest,
@@ -28,9 +27,9 @@ class TestUserHistory:
         auth = await create_user_and_login(client, user_data)
 
         trip_dates: list[datetime] = [
-            datetime(2025, 11, 1, 8, 0, 0, tzinfo=timezone.utc),
-            datetime(2025, 11, 15, 12, 0, 0, tzinfo=timezone.utc),
-            datetime(2025, 11, 29, 18, 0, 0, tzinfo=timezone.utc),
+            datetime(2025, 11, 1, 8, 0, 0, tzinfo=UTC),
+            datetime(2025, 11, 15, 12, 0, 0, tzinfo=UTC),
+            datetime(2025, 11, 29, 18, 0, 0, tzinfo=UTC),
         ]
 
         scores: list[int] = []
@@ -115,7 +114,7 @@ class TestUserHistory:
 
         auth = await create_user_and_login(client, user_data)
 
-        specific_date: datetime = datetime(2025, 6, 15, 10, 30, 0, tzinfo=timezone.utc)
+        specific_date: datetime = datetime(2025, 6, 15, 10, 30, 0, tzinfo=UTC)
         trip_request = CreateTripRequest(
             email=user_data["email"],
             route=RouteIdentifierSchema(bus_line="8000", bus_direction=1),

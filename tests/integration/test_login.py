@@ -5,7 +5,6 @@ from .conftest import create_user_and_login
 
 
 class TestUserRegistration:
-
     @pytest.mark.asyncio
     async def test_create_account_should_work(
         self,
@@ -73,7 +72,6 @@ class TestUserRegistration:
 
 
 class TestUserLogin:
-
     @pytest.mark.asyncio
     async def test_login_should_work(
         self,
@@ -135,7 +133,6 @@ class TestUserLogin:
         self,
         client: AsyncClient,
     ) -> None:
-
         response = await client.post(
             "/users/login",
             data={

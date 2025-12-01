@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
@@ -32,7 +32,7 @@ class TestCreateTrip:
                 bus_direction=1,
             ),
             distance=5000,
-            data=datetime.now(timezone.utc),
+            data=datetime.now(UTC),
         )
 
         response = await client.post(
@@ -46,9 +46,7 @@ class TestCreateTrip:
 
         assert "score" in data
 
-        result = await test_db.execute(
-            select(TripDB).where(TripDB.email == user_data["email"])
-        )
+        result = await test_db.execute(select(TripDB).where(TripDB.email == user_data["email"]))
         trip = result.scalar_one_or_none()
 
         assert trip is not None
@@ -77,7 +75,7 @@ class TestCreateTrip:
                 bus_direction=1,
             ),
             distance=1000,
-            data=datetime.now(timezone.utc),
+            data=datetime.now(UTC),
         )
         second_trip_data = CreateTripRequest(
             email=user_data["email"],
@@ -86,7 +84,7 @@ class TestCreateTrip:
                 bus_direction=1,
             ),
             distance=2000,
-            data=datetime.now(timezone.utc),
+            data=datetime.now(UTC),
         )
 
         resp1 = await client.post(
@@ -128,7 +126,7 @@ class TestCreateTrip:
                 bus_direction=1,
             ),
             distance=1000,
-            data=datetime.now(timezone.utc),
+            data=datetime.now(UTC),
         )
 
         response = await client.post("/trips/", json=trip_data.model_dump(mode="json"))
@@ -154,7 +152,7 @@ class TestCreateTrip:
                 bus_direction=2,
             ),
             distance=0,
-            data=datetime.now(timezone.utc),
+            data=datetime.now(UTC),
         )
 
         response = await client.post(
@@ -187,7 +185,7 @@ class TestCreateTrip:
                 "bus_direction": 1,
             },
             "distance": -1000,
-            "data": datetime.now(timezone.utc).isoformat(),
+            "data": datetime.now(UTC).isoformat(),
         }
 
         response = await client.post(
@@ -198,9 +196,7 @@ class TestCreateTrip:
 
         assert response.status_code == 422
 
-        result = await test_db.execute(
-            select(TripDB).where(TripDB.email == user_data["email"])
-        )
+        result = await test_db.execute(select(TripDB).where(TripDB.email == user_data["email"]))
         trip = result.scalar_one_or_none()
         assert trip is None
 
@@ -225,7 +221,7 @@ class TestCreateTrip:
                 "bus_direction": 3,
             },
             "distance": 1000,
-            "data": datetime.now(timezone.utc).isoformat(),
+            "data": datetime.now(UTC).isoformat(),
         }
 
         response = await client.post(
@@ -236,8 +232,6 @@ class TestCreateTrip:
 
         assert response.status_code == 422
 
-        result = await test_db.execute(
-            select(TripDB).where(TripDB.email == user_data["email"])
-        )
+        result = await test_db.execute(select(TripDB).where(TripDB.email == user_data["email"]))
         trip = result.scalar_one_or_none()
         assert trip is None
