@@ -49,7 +49,7 @@ async def test_get_bus_positions_calls_auth_and_provider() -> None:
     ]
 
     # configurando retorno tipado do mock
-    raw_provider.get_bus_positions.return_value = expected_positions  # type: ignore[assignment]
+    raw_provider.get_bus_positions.return_value = expected_positions
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
     service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
@@ -85,7 +85,7 @@ async def test_get_route_details_calls_auth_and_provider() -> None:
     expected_routes: list[BusRoute] = [expected_bus_route]
 
     # agora o provider também retorna lista
-    raw_provider.get_route_details.return_value = expected_routes  # type: ignore[assignment]
+    raw_provider.get_route_details.return_value = expected_routes
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
     service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
@@ -182,7 +182,7 @@ def test_get_route_shape_found() -> None:
 
     gtfs_repo.get_route_shape.return_value = mock_shape
 
-    service = RouteService(bus_provider, gtfs_repo)  # type: ignore[arg-type]
+    service = RouteService(bus_provider, gtfs_repo)
 
     # Act
     result = service.get_route_shape("1012-10")
@@ -203,7 +203,7 @@ def test_get_route_shape_not_found() -> None:
 
     gtfs_repo.get_route_shape.return_value = None
 
-    service = RouteService(bus_provider, gtfs_repo)  # type: ignore[arg-type]
+    service = RouteService(bus_provider, gtfs_repo)
 
     # Act
     result = service.get_route_shape("nonexistent-route")
@@ -233,7 +233,7 @@ def test_get_route_shape_with_many_points() -> None:
 
     gtfs_repo.get_route_shape.return_value = mock_shape
 
-    service = RouteService(bus_provider, gtfs_repo)  # type: ignore[arg-type]
+    service = RouteService(bus_provider, gtfs_repo)
 
     # Act
     result = service.get_route_shape("long-route")
@@ -266,7 +266,7 @@ def test_get_route_shape_with_special_characters() -> None:
 
     gtfs_repo.get_route_shape.return_value = mock_shape
 
-    service = RouteService(bus_provider, gtfs_repo)  # type: ignore[arg-type]
+    service = RouteService(bus_provider, gtfs_repo)
 
     # Act
     result = service.get_route_shape("route-with-special_chars@123")
@@ -297,7 +297,7 @@ def test_get_route_shape_independent_of_bus_provider() -> None:
 
     gtfs_repo.get_route_shape.return_value = mock_shape
 
-    service = RouteService(bus_provider, gtfs_repo)  # type: ignore[arg-type]
+    service = RouteService(bus_provider, gtfs_repo)
 
     # Act
     result = service.get_route_shape("test-route")

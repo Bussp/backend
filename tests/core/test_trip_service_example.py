@@ -39,9 +39,9 @@ async def test_create_trip_calculates_score_correctly() -> None:
     )
     user_repo.get_user_by_email = AsyncMock(return_value=test_user)
     user_repo.add_user_score = AsyncMock(return_value=test_user)
-    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)  # type: ignore[misc]
+    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)
 
-    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
+    service = TripService(trip_repo, user_repo)
 
     distance = 1000
 
@@ -80,9 +80,9 @@ async def test_create_trip_with_pytest_mock(mocker: "MockerFixture") -> None:
     )
     user_repo.get_user_by_email = AsyncMock(return_value=test_user)
     user_repo.add_user_score = AsyncMock(return_value=test_user)
-    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)  # type: ignore[misc]
+    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)
 
-    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
+    service = TripService(trip_repo, user_repo)
 
     distance = 2500
 
@@ -98,7 +98,7 @@ async def test_create_trip_with_pytest_mock(mocker: "MockerFixture") -> None:
     # Assert
     expected_score = (distance // 1000) * 77
     assert trip.score == expected_score
-    user_repo.add_user_score.assert_awaited_once_with("alice@example.com", expected_score)  # type: ignore[attr-defined]
+    user_repo.add_user_score.assert_awaited_once_with("alice@example.com", expected_score)
 
 
 @pytest.mark.asyncio
@@ -112,7 +112,7 @@ async def test_create_trip_fails_for_nonexistent_user(mocker: "MockerFixture") -
     user_repo.add_user_score = AsyncMock()
     trip_repo.save_trip = AsyncMock()
 
-    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
+    service = TripService(trip_repo, user_repo)
 
     # Act & Assert
     with pytest.raises(ValueError, match="not found"):
@@ -124,9 +124,9 @@ async def test_create_trip_fails_for_nonexistent_user(mocker: "MockerFixture") -
             trip_date=datetime.now(),
         )
 
-    user_repo.get_user_by_email.assert_awaited_once_with("ghost@example.com")  # type: ignore[attr-defined]
-    trip_repo.save_trip.assert_not_awaited()  # type: ignore[attr-defined]
-    user_repo.add_user_score.assert_not_awaited()  # type: ignore[attr-defined]
+    user_repo.get_user_by_email.assert_awaited_once_with("ghost@example.com")
+    trip_repo.save_trip.assert_not_awaited()
+    user_repo.add_user_score.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -144,9 +144,9 @@ async def test_multiple_trips(mocker: "MockerFixture") -> None:
     )
     user_repo.get_user_by_email = AsyncMock(return_value=test_user)
     user_repo.add_user_score = AsyncMock(return_value=test_user)
-    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)  # type: ignore[misc]
+    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)
 
-    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
+    service = TripService(trip_repo, user_repo)
 
     # Act
     trip1 = await service.create_trip(
@@ -168,10 +168,10 @@ async def test_multiple_trips(mocker: "MockerFixture") -> None:
     # Assert
     assert trip1.score == 0
     assert trip2.score == 77
-    assert trip_repo.save_trip.await_count == 2  # type: ignore[attr-defined]
-    assert user_repo.add_user_score.await_count == 2  # type: ignore[attr-defined]
-    user_repo.add_user_score.assert_any_await("bob@example.com", 0)  # type: ignore[attr-defined]
-    user_repo.add_user_score.assert_any_await("bob@example.com", 77)  # type: ignore[attr-defined]
+    assert trip_repo.save_trip.await_count == 2
+    assert user_repo.add_user_score.await_count == 2
+    user_repo.add_user_score.assert_any_await("bob@example.com", 0)
+    user_repo.add_user_score.assert_any_await("bob@example.com", 77)
 
 
 @pytest.mark.asyncio
@@ -191,7 +191,7 @@ async def test_handles_repository_save_error(mocker: "MockerFixture") -> None:
     user_repo.add_user_score = AsyncMock()
     trip_repo.save_trip = AsyncMock(side_effect=RuntimeError("Database connection lost!"))
 
-    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
+    service = TripService(trip_repo, user_repo)
 
     # Act & Assert
     with pytest.raises(RuntimeError, match="Database connection lost"):
@@ -203,5 +203,5 @@ async def test_handles_repository_save_error(mocker: "MockerFixture") -> None:
             trip_date=datetime.now(),
         )
 
-    trip_repo.save_trip.assert_awaited_once()  # type: ignore[attr-defined]
-    user_repo.add_user_score.assert_not_awaited()  # type: ignore[attr-defined]
+    trip_repo.save_trip.assert_awaited_once()
+    user_repo.add_user_score.assert_not_awaited()

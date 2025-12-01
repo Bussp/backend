@@ -12,9 +12,11 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 from datetime import datetime
+from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.adapters.repositories.history_repository_adapter import (
     UserHistoryRepositoryAdapter,
@@ -39,15 +41,15 @@ class _DummyUser:
 
 
 class _DummyResult:
-    def __init__(self, value):
+    def __init__(self, value: Any) -> None:
         self._value = value
 
-    def scalar_one_or_none(self):
+    def scalar_one_or_none(self) -> Any:
         return self._value
 
 
 @pytest.fixture(scope="function")
-async def db_session_transactional() -> AsyncGenerator:
+async def db_session_transactional() -> AsyncGenerator[AsyncSession, None]:
     """Provide an AsyncSession inside a transaction that will be rolled back.
 
     This fixture opens a connection from the project's engine, begins an
@@ -85,9 +87,9 @@ async def test_get_user_history_returns_history_using_autospec() -> None:
     user_db = _DummyUser(email="alice@example.com", trips=[trip])
 
     # Mock execute to be async and return an object with scalar_one_or_none()
-    session.execute = AsyncMock(return_value=_DummyResult(user_db))  # type: ignore[attr-defined]
+    session.execute = AsyncMock(return_value=_DummyResult(user_db))
 
-    adapter = UserHistoryRepositoryAdapter(session)  # type: ignore[arg-type]
+    adapter = UserHistoryRepositoryAdapter(session)
 
     # Act
     history = await adapter.get_user_history("alice@example.com")
@@ -106,7 +108,7 @@ async def test_get_user_history_returns_none_when_missing_or_no_trips() -> None:
     # Arrange: case where execute returns None
     session_none = AsyncMock()
     session_none.execute = AsyncMock(return_value=_DummyResult(None))
-    adapter_none = UserHistoryRepositoryAdapter(session_none)  # type: ignore[arg-type]
+    adapter_none = UserHistoryRepositoryAdapter(session_none)
 
     # Act & Assert
     history_none = await adapter_none.get_user_history("noone@example.com")
@@ -115,8 +117,8 @@ async def test_get_user_history_returns_none_when_missing_or_no_trips() -> None:
     # Arrange: user exists but has empty trips
     session_empty = AsyncMock()
     user_empty = _DummyUser(email="empty@example.com", trips=[])
-    session_empty.execute = AsyncMock(return_value=_DummyResult(user_empty))  # type: ignore[attr-defined]
-    adapter_empty = UserHistoryRepositoryAdapter(session_empty)  # type: ignore[arg-type]
+    session_empty.execute = AsyncMock(return_value=_DummyResult(user_empty))
+    adapter_empty = UserHistoryRepositoryAdapter(session_empty)
 
     # Act & Assert
     history_empty = await adapter_empty.get_user_history("empty@example.com")
