@@ -13,6 +13,7 @@ from src.web.schemas import (
     RouteIdentifierSchema,
 )
 
+
 class TestRouteDetails:
     @pytest.mark.asyncio
     async def test_get_route_details_returns_successfully(
