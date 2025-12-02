@@ -46,8 +46,7 @@ async def get_user_history(
 
     # Combine dates and scores into trip entries (returns empty list if no history)
     trips = [
-        TripHistoryEntry(date=date, score=score)
-        for date, score in zip(dates, scores, strict=False)
+        TripHistoryEntry(date=date, score=score) for date, score in zip(dates, scores, strict=False)
     ]
 
     return HistoryResponse(trips=trips)

@@ -22,9 +22,7 @@ from ..schemas import (
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.post(
-    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     request: UserCreateAccountRequest,
     user_service: UserService = Depends(get_user_service),

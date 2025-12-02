@@ -45,9 +45,7 @@ class TestCreateTrip:
 
         assert "score" in data
 
-        result = await test_db.execute(
-            select(TripDB).where(TripDB.email == user_data["email"])
-        )
+        result = await test_db.execute(select(TripDB).where(TripDB.email == user_data["email"]))
         trip = result.scalar_one_or_none()
 
         assert trip is not None
@@ -186,9 +184,7 @@ class TestCreateTrip:
 
         assert response.status_code == 422
 
-        result = await test_db.execute(
-            select(TripDB).where(TripDB.email == user_data["email"])
-        )
+        result = await test_db.execute(select(TripDB).where(TripDB.email == user_data["email"]))
         trip = result.scalar_one_or_none()
         assert trip is None
 
@@ -222,8 +218,6 @@ class TestCreateTrip:
 
         assert response.status_code == 422
 
-        result = await test_db.execute(
-            select(TripDB).where(TripDB.email == user_data["email"])
-        )
+        result = await test_db.execute(select(TripDB).where(TripDB.email == user_data["email"]))
         trip = result.scalar_one_or_none()
         assert trip is None

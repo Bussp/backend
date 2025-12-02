@@ -587,9 +587,7 @@ class TestBusPositions:
             ]
         )
 
-        response = await client.post(
-            "/routes/positions", json=request_data.model_dump()
-        )
+        response = await client.post("/routes/positions", json=request_data.model_dump())
 
         assert response.status_code == 401
 

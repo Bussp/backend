@@ -55,9 +55,7 @@ def override_dependency(
 
 
 @pytest.mark.asyncio
-async def test_details_endpoint_success(
-    client: TestClient, mock_service: RouteService
-) -> None:
+async def test_details_endpoint_success(client: TestClient, mock_service: RouteService) -> None:
     """
     Testa o endpoint POST /routes/details garantindo que:
     - Ele chama RouteService.get_route_details()
@@ -132,9 +130,7 @@ async def test_details_endpoint_error_returns_500(
 
 
 @pytest.mark.asyncio
-async def test_positions_endpoint_success(
-    client: TestClient, mock_service: RouteService
-) -> None:
+async def test_positions_endpoint_success(client: TestClient, mock_service: RouteService) -> None:
     """
     Testa o endpoint POST /routes/positions garantindo que:
     - Ele chama RouteService.get_bus_positions()

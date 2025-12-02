@@ -140,9 +140,7 @@ class RouteShapeResponse(BaseModel):
 
     route_id: str = Field(..., description="Route identifier")
     shape_id: str = Field(..., description="GTFS shape identifier")
-    points: list[CoordinateSchema] = Field(
-        ..., description="Ordered list of coordinates"
-    )
+    points: list[CoordinateSchema] = Field(..., description="Ordered list of coordinates")
 
 
 # ===== Ranking Schemas =====

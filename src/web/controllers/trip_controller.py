@@ -33,9 +33,7 @@ def get_trip_service(db: AsyncSession = Depends(get_db)) -> TripService:
     return TripService(trip_repo, user_repo)
 
 
-@router.post(
-    "/", response_model=CreateTripResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/", response_model=CreateTripResponse, status_code=status.HTTP_201_CREATED)
 async def create_trip(
     request: CreateTripRequest,
     trip_service: TripService = Depends(get_trip_service),
