@@ -67,6 +67,7 @@ class TestUserRegistration:
         response = await client.post("/users/register", json=invalid_data)
         assert response.status_code == 422  # Validation error
 
+
 class TestUserLogin:
     @pytest.mark.asyncio
     async def test_login_should_work(
