@@ -15,9 +15,7 @@ async def sessao_bd() -> AsyncGenerator[AsyncSession, None]:
     async with motor.begin() as conexao:
         await conexao.run_sync(Base.metadata.create_all)
 
-    fabrica_sessao = async_sessionmaker(
-        motor, class_=AsyncSession, expire_on_commit=False
-    )
+    fabrica_sessao = async_sessionmaker(motor, class_=AsyncSession, expire_on_commit=False)
 
     async with fabrica_sessao() as sessao:
         yield sessao

@@ -49,7 +49,9 @@ def test_criar_usuario_com_sucesso(cliente: TestClient, servico_usuario_mock: Ma
     assert "password" not in dados
 
 
-def test_criar_usuario_email_ja_cadastrado(cliente: TestClient, servico_usuario_mock: MagicMock) -> None:
+def test_criar_usuario_email_ja_cadastrado(
+    cliente: TestClient, servico_usuario_mock: MagicMock
+) -> None:
     servico_usuario_mock.create_user = AsyncMock(
         side_effect=ValueError("User with email marcos@email.com already exists")
     )
@@ -99,7 +101,9 @@ def test_login_usuario_sucesso(cliente: TestClient, servico_usuario_mock: MagicM
     assert isinstance(dados["access_token"], str)
 
 
-def test_login_usuario_credenciais_invalidas(cliente: TestClient, servico_usuario_mock: MagicMock) -> None:
+def test_login_usuario_credenciais_invalidas(
+    cliente: TestClient, servico_usuario_mock: MagicMock
+) -> None:
     servico_usuario_mock.login_user = AsyncMock(return_value=None)
 
     app.dependency_overrides[get_user_service] = lambda: servico_usuario_mock
@@ -118,7 +122,9 @@ def test_login_usuario_credenciais_invalidas(cliente: TestClient, servico_usuari
     assert resposta.json()["detail"] == "Invalid email or password"
 
 
-def test_buscar_usuario_por_email_sucesso(cliente: TestClient, servico_usuario_mock: MagicMock) -> None:
+def test_buscar_usuario_por_email_sucesso(
+    cliente: TestClient, servico_usuario_mock: MagicMock
+) -> None:
     usuario_mock = User(
         name="Rafael Gonçalves",
         email="rafael@email.com",
@@ -140,7 +146,9 @@ def test_buscar_usuario_por_email_sucesso(cliente: TestClient, servico_usuario_m
     assert dados["score"] == 70
 
 
-def test_buscar_usuario_nao_encontrado(cliente: TestClient, servico_usuario_mock: MagicMock) -> None:
+def test_buscar_usuario_nao_encontrado(
+    cliente: TestClient, servico_usuario_mock: MagicMock
+) -> None:
     servico_usuario_mock.get_user = AsyncMock(return_value=None)
 
     app.dependency_overrides[get_user_service] = lambda: servico_usuario_mock
@@ -153,7 +161,9 @@ def test_buscar_usuario_nao_encontrado(cliente: TestClient, servico_usuario_mock
     assert resposta.json()["detail"] == "User not found"
 
 
-def test_buscar_informacoes_usuario_atual_com_token_valido(cliente: TestClient, servico_usuario_mock: MagicMock) -> None:
+def test_buscar_informacoes_usuario_atual_com_token_valido(
+    cliente: TestClient, servico_usuario_mock: MagicMock
+) -> None:
     usuario_mock = User(
         name="Camila Rodrigues",
         email="camila@email.com",
@@ -164,7 +174,9 @@ def test_buscar_informacoes_usuario_atual_com_token_valido(cliente: TestClient, 
 
     app.dependency_overrides[get_user_service] = lambda: servico_usuario_mock
 
-    with patch("src.web.controllers.user_controller.verify_token", return_value={"sub": "camila@email.com"}):
+    with patch(
+        "src.web.controllers.user_controller.verify_token", return_value={"sub": "camila@email.com"}
+    ):
         resposta = cliente.get(
             "/users/me",
             headers={"Authorization": "Bearer token_valido_aqui"},
@@ -185,7 +197,9 @@ def test_buscar_informacoes_usuario_atual_sem_token(cliente: TestClient) -> None
     assert resposta.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-def test_buscar_informacoes_usuario_atual_token_invalido(cliente: TestClient, servico_usuario_mock: MagicMock) -> None:
+def test_buscar_informacoes_usuario_atual_token_invalido(
+    cliente: TestClient, servico_usuario_mock: MagicMock
+) -> None:
     servico_usuario_mock.get_user = AsyncMock(return_value=None)
 
     app.dependency_overrides[get_user_service] = lambda: servico_usuario_mock
