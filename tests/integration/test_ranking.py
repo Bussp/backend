@@ -8,13 +8,11 @@ from src.web.schemas import CreateTripRequest, RouteIdentifierSchema
 
 from .conftest import create_test_user_in_db, create_user_and_login
 
-
 class TestUserRankPosition:
     @pytest.mark.asyncio
     async def test_get_user_rank_position_should_work(
         self,
         client: AsyncClient,
-        test_db: AsyncSession,
     ) -> None:
         user_data = {
             "name": "Test User",

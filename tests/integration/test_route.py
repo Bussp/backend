@@ -13,7 +13,6 @@ from src.web.schemas import (
     RouteIdentifierSchema,
 )
 
-
 class TestRouteDetails:
     @pytest.mark.asyncio
     async def test_get_route_details_returns_successfully(
@@ -53,7 +52,6 @@ class TestRouteDetails:
             assert "routes" in data
             assert len(data["routes"]) == 1
 
-            # Verify route structure
             first_route = data["routes"][0]
             assert "route_id" in first_route
             assert first_route["route_id"] == 12345
@@ -245,7 +243,6 @@ class TestBusPositions:
         self,
         client: AsyncClient,
     ) -> None:
-        """Test that getting bus positions returns 500 on API errors."""
         with (
             patch(
                 "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
@@ -277,7 +274,6 @@ class TestBusPositions:
         self,
         client: AsyncClient,
     ) -> None:
-        """Test that getting bus positions returns empty list when no buses running."""
         with (
             patch(
                 "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
@@ -312,7 +308,6 @@ class TestBusPositions:
         self,
         client: AsyncClient,
     ) -> None:
-        """Test that querying multiple routes returns positions for all of them."""
         mock_positions_8000 = [
             BusPosition(
                 route=RouteIdentifier(bus_line="8000", bus_direction=1),
@@ -368,7 +363,6 @@ class TestBusPositions:
         self,
         client: AsyncClient,
     ) -> None:
-        """Test behavior when SPTrans authentication fails."""
         with patch(
             "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
             new_callable=AsyncMock,
@@ -392,7 +386,6 @@ class TestBusPositions:
         self,
         client: AsyncClient,
     ) -> None:
-        """Test that invalid bus direction fails validation."""
         request_data = {
             "routes": [
                 {
@@ -411,7 +404,6 @@ class TestBusPositions:
         self,
         client: AsyncClient,
     ) -> None:
-        """Test behavior with empty routes list."""
         with (
             patch(
                 "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
@@ -444,7 +436,6 @@ class TestRouteShape:
         self,
         client: AsyncClient,
     ) -> None:
-        """Test that getting route shape works for an existing route."""
         response = await client.get("/routes/shape/1012-10")
 
         assert response.status_code == 200
@@ -476,7 +467,6 @@ class TestRouteShape:
         self,
         client: AsyncClient,
     ) -> None:
-        """Test that all shape points have valid São Paulo coordinates."""
         response = await client.get("/routes/shape/1012-10")
 
         assert response.status_code == 200

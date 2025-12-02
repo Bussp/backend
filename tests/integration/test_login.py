@@ -23,7 +23,6 @@ class TestUserRegistration:
         assert data["name"] == user_data["name"]
         assert data["email"] == user_data["email"]
         assert data["score"] == 0
-        # Password should not be returned
         assert "password" not in data
 
     @pytest.mark.asyncio
@@ -36,11 +35,9 @@ class TestUserRegistration:
             "email": "test@example.com",
             "password": "securepassword123",
         }
-        # Create first user
         response1 = await client.post("/users/register", json=user_data)
         assert response1.status_code == 201
 
-        # Try to create second user with same email
         response2 = await client.post("/users/register", json=user_data)
         assert response2.status_code == 400
 
@@ -69,7 +66,6 @@ class TestUserRegistration:
         }
         response = await client.post("/users/register", json=invalid_data)
         assert response.status_code == 422  # Validation error
-
 
 class TestUserLogin:
     @pytest.mark.asyncio
@@ -145,14 +141,11 @@ class TestUserLogin:
 
 
 class TestGetUserInfo:
-    """Test getting user information."""
-
     @pytest.mark.asyncio
     async def test_get_user_info_should_work(
         self,
         client: AsyncClient,
     ) -> None:
-        """Test that authenticated user can get their own info."""
         user_data = {
             "name": "Test User",
             "email": "test@example.com",
@@ -207,13 +200,10 @@ class TestGetOtherUserInfo:
             "email": "second@example.com",
             "password": "anotherpassword123",
         }
-        # Create first user
         await client.post("/users/register", json=user_data)
 
-        # Create second user
         await client.post("/users/register", json=second_user_data)
 
-        # Get first user's info by email (public endpoint)
         response = await client.get(f"/users/{user_data['email']}")
 
         assert response.status_code == 200
@@ -228,7 +218,6 @@ class TestGetOtherUserInfo:
         self,
         client: AsyncClient,
     ) -> None:
-        """Test that getting non-existent user's info returns 404."""
         response = await client.get("/users/nonexistent@example.com")
 
         assert response.status_code == 404
