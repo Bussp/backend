@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+from .bus import RouteIdentifier
+
 
 @dataclass
 class Trip:
@@ -11,18 +13,14 @@ class Trip:
 
     Attributes:
         email: Email of the user who made the trip
-        bus_line: Bus line identifier (e.g., "8000")
-        bus_direction: Direction of the bus (1 or 2)
+        route: Route identifier containing bus_line and bus_direction
         distance: Distance traveled in meters
         score: Points earned from this trip
-        start_date: When the trip started
-        end_date: When the trip ended
+        trip_date: When the trip occurred
     """
 
     email: str
-    bus_line: str
-    bus_direction: int
+    route: RouteIdentifier
     distance: int
     score: int
-    start_date: datetime
-    end_date: datetime
+    trip_date: datetime

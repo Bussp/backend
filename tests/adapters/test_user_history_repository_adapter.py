@@ -1,13 +1,3 @@
-"""Tests for UserHistoryRepositoryAdapter using example-based patterns.
-
-These tests follow the style used in `tests/core/test_trip_service_example.py`:
-- use `create_autospec` for interfaces where appropriate
-- use `AsyncMock` to simulate async behaviors
-
-They avoid real DB IO by autospeccing/mocking the AsyncSession execute
-to return an object with `scalar_one_or_none()`.
-"""
-
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
@@ -24,14 +14,13 @@ from src.adapters.repositories.history_repository_adapter import (
 
 
 class _DummyTrip:
-    def __init__(self, email: str, bus_line: str, score: int) -> None:
+    def __init__(self, email: str, bus_line: str, bus_direction: int, score: int) -> None:
         self.email = email
         self.bus_line = bus_line
-        self.bus_direction = 1
+        self.bus_direction = bus_direction
         self.distance = 100
         self.score = score
-        self.start_date = datetime(2025, 1, 1)
-        self.end_date = datetime(2025, 1, 1, 1)
+        self.trip_date = datetime(2025, 1, 1)
 
 
 class _DummyUser:
@@ -50,14 +39,6 @@ class _DummyResult:
 
 @pytest.fixture(scope="function")
 async def db_session_transactional() -> AsyncGenerator[AsyncSession, None]:
-    """Provide an AsyncSession inside a transaction that will be rolled back.
-
-    This fixture opens a connection from the project's engine, begins an
-    outer transaction, yields a session bound to that connection, and rolls
-    back at teardown so the DB is unchanged.
-    """
-    # Import heavy SQLAlchemy objects lazily to avoid collection-time import
-    # of SQLAlchemy internals which can fail in some environments.
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
     from src.adapters.database.connection import engine
@@ -76,50 +57,64 @@ async def db_session_transactional() -> AsyncGenerator[AsyncSession, None]:
 
 @pytest.mark.asyncio
 async def test_get_user_history_returns_history_using_autospec() -> None:
-    """Adapter should return a mapped UserHistory when DB returns a user with trips."""
-    # Arrange
-    # Use a simple AsyncMock for the session to avoid introspecting SQLAlchemy
-    # internals (create_autospec can trigger issues with SQLAlchemy's typing-only
-    # classes). We only need execute() for this test.
     session = AsyncMock()
 
-    trip = _DummyTrip(email="alice@example.com", bus_line="8000", score=12)
+    trip = _DummyTrip(email="alice@example.com", bus_line="8000", bus_direction=1, score=12)
     user_db = _DummyUser(email="alice@example.com", trips=[trip])
 
-    # Mock execute to be async and return an object with scalar_one_or_none()
     session.execute = AsyncMock(return_value=_DummyResult(user_db))
 
     adapter = UserHistoryRepositoryAdapter(session)
 
-    # Act
     history = await adapter.get_user_history("alice@example.com")
 
-    # Assert
     assert history is not None
     assert history.email == "alice@example.com"
     assert len(history.trips) == 1
-    assert history.trips[0].bus_line == "8000"
+    assert history.trips[0].route.bus_line == "8000"
+    assert history.trips[0].route.bus_direction == 1
     assert history.trips[0].score == 12
 
 
 @pytest.mark.asyncio
 async def test_get_user_history_returns_none_when_missing_or_no_trips() -> None:
-    """Adapter should return None when DB returns None or when user.trips is empty."""
-    # Arrange: case where execute returns None
     session_none = AsyncMock()
     session_none.execute = AsyncMock(return_value=_DummyResult(None))
     adapter_none = UserHistoryRepositoryAdapter(session_none)
 
-    # Act & Assert
     history_none = await adapter_none.get_user_history("noone@example.com")
     assert history_none is None
 
-    # Arrange: user exists but has empty trips
     session_empty = AsyncMock()
     user_empty = _DummyUser(email="empty@example.com", trips=[])
     session_empty.execute = AsyncMock(return_value=_DummyResult(user_empty))
     adapter_empty = UserHistoryRepositoryAdapter(session_empty)
 
-    # Act & Assert
     history_empty = await adapter_empty.get_user_history("empty@example.com")
     assert history_empty is None
+
+
+@pytest.mark.asyncio
+async def test_get_user_history_with_multiple_trips_returns_all_route_identifiers() -> None:
+    session = AsyncMock()
+
+    trips = [
+        _DummyTrip(email="multi@example.com", bus_line="8000", bus_direction=1, score=10),
+        _DummyTrip(email="multi@example.com", bus_line="9000", bus_direction=2, score=20),
+        _DummyTrip(email="multi@example.com", bus_line="7000", bus_direction=1, score=30),
+    ]
+    user_db = _DummyUser(email="multi@example.com", trips=trips)
+
+    session.execute = AsyncMock(return_value=_DummyResult(user_db))
+
+    adapter = UserHistoryRepositoryAdapter(session)
+
+    history = await adapter.get_user_history("multi@example.com")
+
+    assert history is not None
+    assert len(history.trips) == 3
+
+    route_data = [(trip.route.bus_line, trip.route.bus_direction) for trip in history.trips]
+    assert ("8000", 1) in route_data
+    assert ("9000", 2) in route_data
+    assert ("7000", 1) in route_data

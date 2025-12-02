@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ...adapters.database.connection import get_db
 from ...adapters.repositories.trip_repository_adapter import TripRepositoryAdapter
 from ...adapters.repositories.user_repository_adapter import UserRepositoryAdapter
+from ...core.models.bus import RouteIdentifier
 from ...core.models.user import User
 from ...core.services.trip_service import TripService
 from ..auth import get_current_user
@@ -54,10 +55,13 @@ async def create_trip(
         HTTPException: If user not found or validation fails
     """
     try:
-        trip = await trip_service.create_trip(
-            email=current_user.email,
+        route = RouteIdentifier(
             bus_line=request.route.bus_line,
             bus_direction=request.route.bus_direction,
+        )
+        trip = await trip_service.create_trip(
+            email=current_user.email,
+            route=route,
             distance=request.distance,
             trip_date=request.data,
         )
