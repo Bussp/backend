@@ -10,7 +10,9 @@ from ...adapters.external.sptrans_adapter import SpTransAdapter
 from ...adapters.repositories.gtfs_repository_adapter import GTFSRepositoryAdapter
 from ...config import settings
 from ...core.models.bus import BusPosition, BusRoute, RouteIdentifier
+from ...core.models.user import User
 from ...core.services.route_service import RouteService
+from ..auth import get_current_user
 from ..mappers import (
     map_bus_position_list_to_schema,
     map_route_identifier_schema_to_domain,
@@ -48,6 +50,7 @@ def get_route_service() -> RouteService:
 async def get_route_details_endpoint(
     request: BusRoutesDetailsRequest,
     route_service: RouteService = Depends(get_route_service),
+    current_user: User = Depends(get_current_user),
 ) -> BusRoutesDetailsResponse:
     """
     Resolve, para cada linha solicitada, as rotas concretas do provedor
@@ -59,7 +62,8 @@ async def get_route_details_endpoint(
     try:
         # Schemas -> domínio (RouteIdentifier)
         route_identifiers: list[RouteIdentifier] = [
-            map_route_identifier_schema_to_domain(route_schema) for route_schema in request.routes
+            map_route_identifier_schema_to_domain(route_schema)
+            for route_schema in request.routes
         ]
 
         bus_routes: list[BusRoute] = []
@@ -97,6 +101,7 @@ async def get_route_details_endpoint(
 async def get_bus_positions(
     request: BusPositionsRequest,
     route_service: RouteService = Depends(get_route_service),
+    current_user: User = Depends(get_current_user),
 ) -> BusPositionsResponse:
     """
     Recupera as posições dos ônibus para as rotas já resolvidas.
@@ -119,7 +124,9 @@ async def get_bus_positions(
                 route=route_identifier,
             )
 
-            route_positions: list[BusPosition] = await route_service.get_bus_positions(bus_route)
+            route_positions: list[BusPosition] = await route_service.get_bus_positions(
+                bus_route
+            )
             all_positions.extend(route_positions)
 
         # Domínio -> schemas
@@ -138,6 +145,7 @@ async def get_bus_positions(
 async def get_route_shape(
     route_id: str,
     route_service: RouteService = Depends(get_route_service),
+    current_user: User = Depends(get_current_user),
 ) -> RouteShapeResponse:
     """
     Get the geographic shape (coordinates) of a route from GTFS data.

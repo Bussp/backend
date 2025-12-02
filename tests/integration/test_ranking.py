@@ -22,10 +22,8 @@ class TestUserRankPosition:
         }
         auth = await create_user_and_login(client, user_data)
 
-        request_data = {"email": user_data["email"]}
-        response = await client.post(
+        response = await client.get(
             "/rank/user",
-            json=request_data,
             headers=auth["headers"],
         )
 
@@ -53,7 +51,6 @@ class TestUserRankPosition:
         auth = await create_user_and_login(client, user_data)
 
         trip_data = CreateTripRequest(
-            email=user_data["email"],
             route=RouteIdentifierSchema(bus_line="8000", bus_direction=1),
             distance=0,
             data=datetime.now(UTC),
@@ -62,10 +59,8 @@ class TestUserRankPosition:
             "/trips/", json=trip_data.model_dump(mode="json"), headers=auth["headers"]
         )
 
-        request_data = {"email": user_data["email"]}
-        response = await client.post(
+        response = await client.get(
             "/rank/user",
-            json=request_data,
             headers=auth["headers"],
         )
 
@@ -78,13 +73,7 @@ class TestUserRankPosition:
         self,
         client: AsyncClient,
     ) -> None:
-        user_data = {
-            "name": "Test User",
-            "email": "test@example.com",
-            "password": "securepassword123",
-        }
-        request_data = {"email": user_data["email"]}
-        response = await client.post("/rank/user", json=request_data)
+        response = await client.get("/rank/user")
 
         assert response.status_code == 401
 
@@ -100,16 +89,23 @@ class TestGlobalRanking:
         await create_test_user_in_db(test_db, "second@example.com", score=500)
         await create_test_user_in_db(test_db, "third@example.com", score=100)
 
-        response = await client.get("/rank/global")
+        user_data = {
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "securepassword123",
+        }
+        auth = await create_user_and_login(client, user_data)
+
+        response = await client.get("/rank/global", headers=auth["headers"])
 
         assert response.status_code == 200
         data = response.json()
 
         assert "users" in data
-        assert len(data["users"]) == 3
+        assert len(data["users"]) == 4
 
         scores = [user["score"] for user in data["users"]]
-        assert scores == [1000, 500, 100]
+        assert scores == [1000, 500, 100, 0]
 
         first_user = data["users"][0]
         assert "name" in first_user
@@ -123,13 +119,20 @@ class TestGlobalRanking:
         client: AsyncClient,
         test_db: AsyncSession,
     ) -> None:
-        response = await client.get("/rank/global")
+        user_data = {
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "securepassword123",
+        }
+        auth = await create_user_and_login(client, user_data)
+
+        response = await client.get("/rank/global", headers=auth["headers"])
 
         assert response.status_code == 200
         data = response.json()
 
         assert "users" in data
-        assert len(data["users"]) == 0
+        assert len(data["users"]) == 1
 
     @pytest.mark.asyncio
     async def test_get_global_ranking_with_single_user(
@@ -139,11 +142,27 @@ class TestGlobalRanking:
     ) -> None:
         await create_test_user_in_db(test_db, "solo@example.com", score=500)
 
-        response = await client.get("/rank/global")
+        user_data = {
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "securepassword123",
+        }
+        auth = await create_user_and_login(client, user_data)
+
+        response = await client.get("/rank/global", headers=auth["headers"])
 
         assert response.status_code == 200
         data = response.json()
 
-        assert len(data["users"]) == 1
+        assert len(data["users"]) == 2
         assert data["users"][0]["email"] == "solo@example.com"
         assert data["users"][0]["score"] == 500
+
+    @pytest.mark.asyncio
+    async def test_get_global_ranking_without_auth_fails(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        response = await client.get("/rank/global")
+
+        assert response.status_code == 401

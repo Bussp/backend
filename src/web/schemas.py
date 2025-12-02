@@ -89,9 +89,6 @@ class TokenResponse(BaseModel):
 
 
 class CreateTripRequest(BaseModel):
-    """Request schema for creating a new trip."""
-
-    email: EmailStr = Field(..., description="User's email")
     route: RouteIdentifierSchema
     distance: int = Field(..., ge=0, description="Distance traveled in meters")
     data: datetime = Field(..., description="Trip date and time")
@@ -143,21 +140,15 @@ class RouteShapeResponse(BaseModel):
 
     route_id: str = Field(..., description="Route identifier")
     shape_id: str = Field(..., description="GTFS shape identifier")
-    points: list[CoordinateSchema] = Field(..., description="Ordered list of coordinates")
+    points: list[CoordinateSchema] = Field(
+        ..., description="Ordered list of coordinates"
+    )
 
 
 # ===== Ranking Schemas =====
 
 
-class UserRankingRequest(BaseModel):
-    """Request schema for getting a user's ranking."""
-
-    email: EmailStr = Field(..., description="User's email")
-
-
 class UserRankingResponse(BaseModel):
-    """Response schema for user ranking."""
-
     position: int = Field(..., description="User's rank position")
 
 
@@ -170,15 +161,7 @@ class GlobalRankingResponse(BaseModel):
 # ===== History Schemas =====
 
 
-class HistoryRequest(BaseModel):
-    """Request schema for getting user history."""
-
-    email: EmailStr = Field(..., description="User's email")
-
-
 class TripHistoryEntry(BaseModel):
-    """Schema for a single trip history entry."""
-
     date: datetime = Field(..., description="Trip date and time")
     score: int = Field(..., description="Points earned from this trip")
 

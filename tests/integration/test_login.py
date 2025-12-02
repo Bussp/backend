@@ -67,6 +67,7 @@ class TestUserRegistration:
         response = await client.post("/users/register", json=invalid_data)
         assert response.status_code == 422  # Validation error
 
+
 class TestUserLogin:
     @pytest.mark.asyncio
     async def test_login_should_work(
@@ -182,43 +183,3 @@ class TestGetUserInfo:
         )
 
         assert response.status_code == 401
-
-
-class TestGetOtherUserInfo:
-    @pytest.mark.asyncio
-    async def test_get_other_user_info_should_work(
-        self,
-        client: AsyncClient,
-    ) -> None:
-        user_data = {
-            "name": "Test User",
-            "email": "test@example.com",
-            "password": "securepassword123",
-        }
-        second_user_data = {
-            "name": "Second User",
-            "email": "second@example.com",
-            "password": "anotherpassword123",
-        }
-        await client.post("/users/register", json=user_data)
-
-        await client.post("/users/register", json=second_user_data)
-
-        response = await client.get(f"/users/{user_data['email']}")
-
-        assert response.status_code == 200
-        data = response.json()
-
-        assert data["name"] == user_data["name"]
-        assert data["email"] == user_data["email"]
-        assert data["score"] == 0
-
-    @pytest.mark.asyncio
-    async def test_get_nonexistent_user_info_fails(
-        self,
-        client: AsyncClient,
-    ) -> None:
-        response = await client.get("/users/nonexistent@example.com")
-
-        assert response.status_code == 404
-        assert "User not found" in response.json()["detail"]

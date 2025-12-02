@@ -26,7 +26,6 @@ class TestCreateTrip:
         auth = await create_user_and_login(client, user_data)
 
         trip_data = CreateTripRequest(
-            email=user_data["email"],
             route=RouteIdentifierSchema(
                 bus_line="8000",
                 bus_direction=1,
@@ -46,7 +45,9 @@ class TestCreateTrip:
 
         assert "score" in data
 
-        result = await test_db.execute(select(TripDB).where(TripDB.email == user_data["email"]))
+        result = await test_db.execute(
+            select(TripDB).where(TripDB.email == user_data["email"])
+        )
         trip = result.scalar_one_or_none()
 
         assert trip is not None
@@ -69,7 +70,6 @@ class TestCreateTrip:
         auth = await create_user_and_login(client, user_data)
 
         trip_data = CreateTripRequest(
-            email=user_data["email"],
             route=RouteIdentifierSchema(
                 bus_line="8000",
                 bus_direction=1,
@@ -78,7 +78,6 @@ class TestCreateTrip:
             data=datetime.now(UTC),
         )
         second_trip_data = CreateTripRequest(
-            email=user_data["email"],
             route=RouteIdentifierSchema(
                 bus_line="8000",
                 bus_direction=1,
@@ -114,13 +113,7 @@ class TestCreateTrip:
         self,
         client: AsyncClient,
     ) -> None:
-        user_data = {
-            "name": "Test User",
-            "email": "test@example.com",
-            "password": "securepassword123",
-        }
         trip_data = CreateTripRequest(
-            email=user_data["email"],
             route=RouteIdentifierSchema(
                 bus_line="8000",
                 bus_direction=1,
@@ -146,7 +139,6 @@ class TestCreateTrip:
         auth = await create_user_and_login(client, user_data)
 
         trip_data = CreateTripRequest(
-            email=user_data["email"],
             route=RouteIdentifierSchema(
                 bus_line="9000",
                 bus_direction=2,
@@ -177,9 +169,7 @@ class TestCreateTrip:
         }
         auth = await create_user_and_login(client, user_data)
 
-        # Use raw dict to bypass Pydantic validation and test API validation
         trip_data = {
-            "email": user_data["email"],
             "route": {
                 "bus_line": "8000",
                 "bus_direction": 1,
@@ -196,7 +186,9 @@ class TestCreateTrip:
 
         assert response.status_code == 422
 
-        result = await test_db.execute(select(TripDB).where(TripDB.email == user_data["email"]))
+        result = await test_db.execute(
+            select(TripDB).where(TripDB.email == user_data["email"])
+        )
         trip = result.scalar_one_or_none()
         assert trip is None
 
@@ -213,9 +205,7 @@ class TestCreateTrip:
         }
         auth = await create_user_and_login(client, user_data)
 
-        # Use raw dict to bypass Pydantic validation and test API validation
         trip_data = {
-            "email": user_data["email"],
             "route": {
                 "bus_line": "8000",
                 "bus_direction": 3,
@@ -232,6 +222,8 @@ class TestCreateTrip:
 
         assert response.status_code == 422
 
-        result = await test_db.execute(select(TripDB).where(TripDB.email == user_data["email"]))
+        result = await test_db.execute(
+            select(TripDB).where(TripDB.email == user_data["email"])
+        )
         trip = result.scalar_one_or_none()
         assert trip is None
