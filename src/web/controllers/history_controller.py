@@ -27,6 +27,8 @@ def get_history_service(db: AsyncSession = Depends(get_db)) -> HistoryService:
     return HistoryService(history_repo)
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.get("/", response_model=HistoryResponse)
 async def get_user_history(
     history_service: HistoryService = Depends(get_history_service),
@@ -46,7 +48,8 @@ async def get_user_history(
 
     # Combine dates and scores into trip entries (returns empty list if no history)
     trips = [
-        TripHistoryEntry(date=date, score=score) for date, score in zip(dates, scores, strict=False)
+        TripHistoryEntry(date=date, score=score)
+        for date, score in zip(dates, scores, strict=False)
     ]
 
     return HistoryResponse(trips=trips)

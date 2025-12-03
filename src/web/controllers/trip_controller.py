@@ -33,7 +33,11 @@ def get_trip_service(db: AsyncSession = Depends(get_db)) -> TripService:
     return TripService(trip_repo, user_repo)
 
 
-@router.post("/", response_model=CreateTripResponse, status_code=status.HTTP_201_CREATED)
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
+@router.post(
+    "/", response_model=CreateTripResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_trip(
     request: CreateTripRequest,
     trip_service: TripService = Depends(get_trip_service),
