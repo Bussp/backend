@@ -17,7 +17,7 @@ from src.core.services.user_service import UserService
 @pytest.mark.asyncio
 async def test_create_user_success() -> None:
     """Test successful user creation with password hashing."""
-    
+
     user_repo = create_autospec(UserRepository, instance=True)
     password_hasher = create_autospec(PasswordHasherPort, instance=True)
 
@@ -34,14 +34,12 @@ async def test_create_user_success() -> None:
 
     service = UserService(user_repo, password_hasher)  # type: ignore[arg-type]
 
-    
     result = await service.create_user(
         name="John Doe",
         email="john@example.com",
         password="securepass123",
     )
 
-    
     assert result.name == "John Doe"
     assert result.email == "john@example.com"
     assert result.password == "hashed_securepass123"
@@ -53,7 +51,7 @@ async def test_create_user_success() -> None:
 @pytest.mark.asyncio
 async def test_create_user_already_exists() -> None:
     """Test user creation fails when email already exists."""
-    
+
     user_repo = create_autospec(UserRepository, instance=True)
     password_hasher = create_autospec(PasswordHasherPort, instance=True)
 
@@ -67,7 +65,6 @@ async def test_create_user_already_exists() -> None:
 
     service = UserService(user_repo, password_hasher)  # type: ignore[arg-type]
 
-    
     with pytest.raises(ValueError, match="User with email john@example.com already exists"):
         await service.create_user(
             name="John Doe",
@@ -82,7 +79,7 @@ async def test_create_user_already_exists() -> None:
 @pytest.mark.asyncio
 async def test_get_user_found() -> None:
     """Test retrieving an existing user by email."""
-    
+
     user_repo = create_autospec(UserRepository, instance=True)
     password_hasher = create_autospec(PasswordHasherPort, instance=True)
 
@@ -96,10 +93,8 @@ async def test_get_user_found() -> None:
 
     service = UserService(user_repo, password_hasher)  # type: ignore[arg-type]
 
-    
     result = await service.get_user("jane@example.com")
 
-    
     assert result is not None
     assert result.name == "Jane Doe"
     assert result.email == "jane@example.com"
@@ -110,7 +105,7 @@ async def test_get_user_found() -> None:
 @pytest.mark.asyncio
 async def test_get_user_not_found() -> None:
     """Test retrieving a non-existent user returns None."""
-    
+
     user_repo = create_autospec(UserRepository, instance=True)
     password_hasher = create_autospec(PasswordHasherPort, instance=True)
 
@@ -118,10 +113,8 @@ async def test_get_user_not_found() -> None:
 
     service = UserService(user_repo, password_hasher)  # type: ignore[arg-type]
 
-    
     result = await service.get_user("nonexistent@example.com")
 
-    
     assert result is None
     user_repo.get_user_by_email.assert_called_once_with("nonexistent@example.com")
 
@@ -129,7 +122,7 @@ async def test_get_user_not_found() -> None:
 @pytest.mark.asyncio
 async def test_login_user_success() -> None:
     """Test successful user login with correct credentials."""
-    
+
     user_repo = create_autospec(UserRepository, instance=True)
     password_hasher = create_autospec(PasswordHasherPort, instance=True)
 
@@ -146,10 +139,8 @@ async def test_login_user_success() -> None:
 
     service = UserService(user_repo, password_hasher)  # type: ignore[arg-type]
 
-    
     result = await service.login_user("alice@example.com", "mypassword")
 
-    
     assert result is not None
     assert result.email == "alice@example.com"
     assert result.name == "Alice"
@@ -159,7 +150,7 @@ async def test_login_user_success() -> None:
 @pytest.mark.asyncio
 async def test_login_user_wrong_password() -> None:
     """Test login fails with incorrect password."""
-    
+
     user_repo = create_autospec(UserRepository, instance=True)
     password_hasher = create_autospec(PasswordHasherPort, instance=True)
 
@@ -176,10 +167,8 @@ async def test_login_user_wrong_password() -> None:
 
     service = UserService(user_repo, password_hasher)  # type: ignore[arg-type]
 
-    
     result = await service.login_user("bob@example.com", "wrongpassword")
 
-    
     assert result is None
     user_repo.get_user_by_email.assert_called_once_with("bob@example.com")
 
@@ -187,7 +176,7 @@ async def test_login_user_wrong_password() -> None:
 @pytest.mark.asyncio
 async def test_login_user_not_found() -> None:
     """Test login fails when user doesn't exist."""
-    
+
     user_repo = create_autospec(UserRepository, instance=True)
     password_hasher = create_autospec(PasswordHasherPort, instance=True)
 
@@ -195,9 +184,7 @@ async def test_login_user_not_found() -> None:
 
     service = UserService(user_repo, password_hasher)  # type: ignore[arg-type]
 
-    
     result = await service.login_user("nonexistent@example.com", "anypassword")
 
-    
     assert result is None
     user_repo.get_user_by_email.assert_called_once_with("nonexistent@example.com")

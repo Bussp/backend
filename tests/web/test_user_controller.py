@@ -28,7 +28,7 @@ def mock_user_service() -> MagicMock:
 
 def test_create_user_success(client: TestClient, mock_user_service: MagicMock) -> None:
     """Test successful user registration."""
-    
+
     mock_user = User(
         name="John Doe",
         email="john@example.com",
@@ -41,7 +41,6 @@ def test_create_user_success(client: TestClient, mock_user_service: MagicMock) -
 
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
-    
     response = client.post(
         "/users/register",
         json={
@@ -53,7 +52,6 @@ def test_create_user_success(client: TestClient, mock_user_service: MagicMock) -
 
     app.dependency_overrides.clear()
 
-    
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
     assert data["name"] == "John Doe"
@@ -64,7 +62,7 @@ def test_create_user_success(client: TestClient, mock_user_service: MagicMock) -
 
 def test_create_user_already_exists(client: TestClient, mock_user_service: MagicMock) -> None:
     """Test user registration fails when email already exists."""
-    
+
     mock_user_service.create_user = AsyncMock(
         side_effect=ValueError("User with email john@example.com already exists")
     )
@@ -72,7 +70,6 @@ def test_create_user_already_exists(client: TestClient, mock_user_service: Magic
     with patch(
         "src.web.controllers.user_controller.get_user_service", return_value=mock_user_service
     ):
-        
         response = client.post(
             "/users/register",
             json={
@@ -82,14 +79,13 @@ def test_create_user_already_exists(client: TestClient, mock_user_service: Magic
             },
         )
 
-    
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "already exists" in response.json()["detail"]
 
 
 def test_login_user_success(client: TestClient, mock_user_service: MagicMock) -> None:
     """Test successful user login returns JWT token."""
-    
+
     mock_user = User(
         name="Alice",
         email="alice@example.com",
@@ -102,7 +98,6 @@ def test_login_user_success(client: TestClient, mock_user_service: MagicMock) ->
 
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
-    
     response = client.post(
         "/users/login",
         data={
@@ -113,7 +108,6 @@ def test_login_user_success(client: TestClient, mock_user_service: MagicMock) ->
 
     app.dependency_overrides.clear()
 
-    
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert "access_token" in data
@@ -123,13 +117,12 @@ def test_login_user_success(client: TestClient, mock_user_service: MagicMock) ->
 
 def test_login_user_invalid_credentials(client: TestClient, mock_user_service: MagicMock) -> None:
     """Test login fails with invalid credentials."""
-    
+
     mock_user_service.login_user = AsyncMock(return_value=None)
 
     with patch(
         "src.web.controllers.user_controller.get_user_service", return_value=mock_user_service
     ):
-        
         response = client.post(
             "/users/login",
             data={
@@ -138,14 +131,13 @@ def test_login_user_invalid_credentials(client: TestClient, mock_user_service: M
             },
         )
 
-    
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json()["detail"] == "Invalid email or password"
 
 
 def test_get_user_by_email_success(client: TestClient, mock_user_service: MagicMock) -> None:
     """Test retrieving user information by email."""
-    
+
     mock_user = User(
         name="Bob",
         email="bob@example.com",
@@ -158,12 +150,10 @@ def test_get_user_by_email_success(client: TestClient, mock_user_service: MagicM
 
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
-    
     response = client.get("/users/bob@example.com")
 
     app.dependency_overrides.clear()
 
-    
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["name"] == "Bob"
@@ -173,23 +163,21 @@ def test_get_user_by_email_success(client: TestClient, mock_user_service: MagicM
 
 def test_get_user_not_found(client: TestClient, mock_user_service: MagicMock) -> None:
     """Test retrieving non-existent user returns 404."""
-    
+
     mock_user_service.get_user = AsyncMock(return_value=None)
 
     with patch(
         "src.web.controllers.user_controller.get_user_service", return_value=mock_user_service
     ):
-        
         response = client.get("/users/nonexistent@example.com")
 
-    
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "User not found"
 
 
 def test_get_current_user_info_success(client: TestClient, mock_user_service: MagicMock) -> None:
     """Test accessing /me endpoint with valid JWT token."""
-    
+
     mock_user = User(
         name="Charlie",
         email="charlie@example.com",
@@ -206,7 +194,6 @@ def test_get_current_user_info_success(client: TestClient, mock_user_service: Ma
         "src.web.controllers.user_controller.verify_token",
         return_value={"sub": "charlie@example.com"},
     ):
-        
         response = client.get(
             "/users/me",
             headers={"Authorization": "Bearer valid_token_here"},
@@ -214,7 +201,6 @@ def test_get_current_user_info_success(client: TestClient, mock_user_service: Ma
 
     app.dependency_overrides.clear()
 
-    
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["name"] == "Charlie"
@@ -224,10 +210,9 @@ def test_get_current_user_info_success(client: TestClient, mock_user_service: Ma
 
 def test_get_current_user_info_no_token(client: TestClient) -> None:
     """Test accessing /me endpoint without token returns 401."""
-    
+
     response = client.get("/users/me")
 
-    
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -235,49 +220,43 @@ def test_get_current_user_info_invalid_token(
     client: TestClient, mock_user_service: MagicMock
 ) -> None:
     """Test accessing /me endpoint with invalid token returns 401."""
-    
+
     with (
         patch(
             "src.web.controllers.user_controller.get_user_service", return_value=mock_user_service
         ),
         patch("src.web.controllers.user_controller.verify_token", return_value=None),
     ):
-        
         response = client.get(
             "/users/me",
             headers={"Authorization": "Bearer invalid_token"},
         )
 
-    
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json()["detail"] == "Could not validate credentials"
 
 
 def test_create_user_validation_error(client: TestClient) -> None:
     """Test user registration with invalid data returns 422."""
-    
+
     response = client.post(
         "/users/register",
         json={
             "name": "John Doe",
-            
         },
     )
 
-    
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 def test_login_user_missing_credentials(client: TestClient) -> None:
     """Test login with missing credentials returns 422."""
-    
+
     response = client.post(
         "/users/login",
         data={
             "username": "alice@example.com",
-            
         },
     )
 
-    
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
