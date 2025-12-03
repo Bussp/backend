@@ -114,27 +114,6 @@ class TestGlobalRanking:
         assert first_user["email"] == "first@example.com"
 
     @pytest.mark.asyncio
-    async def test_get_global_ranking_returns_empty_when_no_users(
-        self,
-        client: AsyncClient,
-        test_db: AsyncSession,
-    ) -> None:
-        user_data = {
-            "name": "Test User",
-            "email": "test@example.com",
-            "password": "securepassword123",
-        }
-        auth = await create_user_and_login(client, user_data)
-
-        response = await client.get("/rank/global", headers=auth["headers"])
-
-        assert response.status_code == 200
-        data = response.json()
-
-        assert "users" in data
-        assert len(data["users"]) == 1
-
-    @pytest.mark.asyncio
     async def test_get_global_ranking_with_single_user(
         self,
         client: AsyncClient,
