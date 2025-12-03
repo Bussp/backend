@@ -67,17 +67,20 @@ def test_create_user_already_exists(client: TestClient, mock_user_service: Magic
         side_effect=ValueError("User with email john@example.com already exists")
     )
 
-    with patch(
-        "src.web.controllers.user_controller.get_user_service", return_value=mock_user_service
-    ):
-        response = client.post(
-            "/users/register",
-            json={
-                "name": "John Doe",
-                "email": "john@example.com",
-                "password": "securepass123",
-            },
-        )
+    from src.web.controllers.user_controller import get_user_service
+
+    app.dependency_overrides[get_user_service] = lambda: mock_user_service
+
+    response = client.post(
+        "/users/register",
+        json={
+            "name": "John Doe",
+            "email": "john@example.com",
+            "password": "securepass123",
+        },
+    )
+
+    app.dependency_overrides.clear()
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "already exists" in response.json()["detail"]
@@ -120,16 +123,19 @@ def test_login_user_invalid_credentials(client: TestClient, mock_user_service: M
 
     mock_user_service.login_user = AsyncMock(return_value=None)
 
-    with patch(
-        "src.web.controllers.user_controller.get_user_service", return_value=mock_user_service
-    ):
-        response = client.post(
-            "/users/login",
-            data={
-                "username": "alice@example.com",
-                "password": "wrongpassword",
-            },
-        )
+    from src.web.controllers.user_controller import get_user_service
+
+    app.dependency_overrides[get_user_service] = lambda: mock_user_service
+
+    response = client.post(
+        "/users/login",
+        data={
+            "username": "alice@example.com",
+            "password": "wrongpassword",
+        },
+    )
+
+    app.dependency_overrides.clear()
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json()["detail"] == "Invalid email or password"
@@ -166,10 +172,13 @@ def test_get_user_not_found(client: TestClient, mock_user_service: MagicMock) ->
 
     mock_user_service.get_user = AsyncMock(return_value=None)
 
-    with patch(
-        "src.web.controllers.user_controller.get_user_service", return_value=mock_user_service
-    ):
-        response = client.get("/users/nonexistent@example.com")
+    from src.web.controllers.user_controller import get_user_service
+
+    app.dependency_overrides[get_user_service] = lambda: mock_user_service
+
+    response = client.get("/users/nonexistent@example.com")
+
+    app.dependency_overrides.clear()
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "User not found"
