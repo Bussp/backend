@@ -1,82 +1,81 @@
+import os
+
 import pytest
 
 from src.adapters.external.sptrans_adapter import SpTransAdapter
-from src.core.models.bus import BusPosition, BusRoute, RouteIdentifier
+from src.core.models.bus import BusPosition, BusRoute
 
 
+skip_if_no_token = pytest.mark.skipif(
+    not os.getenv("SPTRANS_API_TOKEN"),
+    reason="SPTRANS_API_TOKEN not set - skipping integration test",
+)
+
+
+@skip_if_no_token
 @pytest.mark.asyncio
-async def test_authentication() -> None:
+async def test_automatic_authentication() -> None:
     """
-    Real authentication test against SPTrans.
-    Requires SPTRANS_API_TOKEN to be configured.
+    Test that the adapter authenticates automatically when making requests.
     """
     adapter: SpTransAdapter = SpTransAdapter()
 
-    ok: bool = await adapter.authenticate()
+    routes: list[BusRoute] = await adapter.search_routes("8075")
 
-    print("Cookies recebidos:", adapter.client.cookies)
+    assert (
+        "apiCredentials" in adapter.client.cookies
+    ), "Cookie de credenciais não foi criado."
+    assert len(routes) > 0
 
-    assert ok is True, "A autenticação real falhou. Verifique seu TOKEN."
-    assert "apiCredentials" in adapter.client.cookies, "Cookie de credenciais não foi criado."
 
-
+@skip_if_no_token
 @pytest.mark.asyncio
-async def test_get_route_details_8075_direction_1() -> None:
+async def test_search_routes_number() -> None:
     """
-    Integration test: resolves the internal SPTrans 'codigoLinha' (cl)
-    for route 8075 using get_route_details(), which now returns a list
-    of BusRoute entries (diferentes sentidos/variações).
+    Searches for route number and validates the results.
     """
     adapter: SpTransAdapter = SpTransAdapter()
 
-    await adapter.authenticate()
+    bus_routes: list[BusRoute] = await adapter.search_routes("8075")
 
-    # RouteIdentifier para linha 8075 (direção ainda existe no domínio)
-    route: RouteIdentifier = RouteIdentifier(bus_line="8075", bus_direction=1)
-
-    # Agora get_route_details retorna list[BusRoute]
-    bus_routes: list[BusRoute] = await adapter.get_route_details(route)
-
-    print("Retrieved BusRoutes:", bus_routes)
-
-    # Validate result
     assert isinstance(bus_routes, list)
     assert len(bus_routes) > 0, "Nenhuma rota retornada para 8075"
 
     for bus_route in bus_routes:
         assert isinstance(bus_route.route_id, int), "route_id must be an integer"
         assert bus_route.route_id > 0, "route_id must be positive"
-        # a linha deve bater com o que pedimos
-        assert bus_route.route.bus_line == "8075"
+        assert "8075" in bus_route.route.bus_line
 
 
+@skip_if_no_token
 @pytest.mark.asyncio
-async def test_get_bus_positions_8075_direction_1() -> None:
+async def test_search_routes_by_destination() -> None:
     """
-    Integration test: fetches real-time positions for one concrete route
-    of line 8075 (direction 1, se disponível), usando
-    get_route_details() + get_bus_positions(), sem mocks.
+    Searches for routes by destination name.
     """
     adapter: SpTransAdapter = SpTransAdapter()
 
-    await adapter.authenticate()
+    bus_routes: list[BusRoute] = await adapter.search_routes("Lapa")
 
-    route: RouteIdentifier = RouteIdentifier(bus_line="8075", bus_direction=1)
+    assert isinstance(bus_routes, list)
+    assert len(bus_routes) > 0, "Nenhuma rota retornada para Lapa"
 
-    # Step 1: resolve SPTrans internal codes (list[BusRoute])
-    bus_routes: list[BusRoute] = await adapter.get_route_details(route)
+
+@skip_if_no_token
+@pytest.mark.asyncio
+async def test_get_bus_positions() -> None:
+    """
+    Fetches real-time positions for route 8075.
+    """
+    adapter: SpTransAdapter = SpTransAdapter()
+
+    bus_routes: list[BusRoute] = await adapter.search_routes("8075")
     assert len(bus_routes) > 0
 
-    # escolhe uma rota com direction 1, se existir; senão, pega a primeira
-    chosen_route: BusRoute = next(
-        (br for br in bus_routes if getattr(br.route, "bus_direction", None) == 1),
-        bus_routes[0],
-    )
-
+    chosen_route: BusRoute = bus_routes[0]
     assert chosen_route.route_id > 0
 
-    # Step 2: fetch positions usando BusRoute concreto
-    positions: list[BusPosition] = await adapter.get_bus_positions(chosen_route)
+    positions: list[BusPosition] = await adapter.get_bus_positions([chosen_route])
 
     assert positions is not None
     assert isinstance(positions, list)
@@ -84,36 +83,22 @@ async def test_get_bus_positions_8075_direction_1() -> None:
     if positions:
         pos: BusPosition = positions[0]
 
-        # Route info should match what we requested (mesma linha)
-        assert pos.route.bus_line == "8075"
+        assert "8075" in pos.route.bus_line
+        assert pos.route.bus_direction in (1, 2)
 
-        # se tiver direction em BusPosition.route, valida também
-        if hasattr(pos.route, "bus_direction"):
-            assert pos.route.bus_direction in (1, 2)
-
-        # Coordenadas
         assert isinstance(pos.position.latitude, float | int)
         assert isinstance(pos.position.longitude, float | int)
 
 
+@skip_if_no_token
 @pytest.mark.asyncio
-async def test_get_route_details_without_authentication():
-    adapter: SpTransAdapter = SpTransAdapter(api_token="INVALID")
-
-    route = RouteIdentifier(bus_line="8075", bus_direction=1)
-
-    with pytest.raises(RuntimeError, match="not authenticated"):
-        await adapter.get_route_details(route)
-
-
-@pytest.mark.asyncio
-async def test_get_bus_positions_without_authentication():
+async def test_search_routes_returns_empty_for_unknown() -> None:
+    """
+    Test that search returns empty list for unknown routes.
+    """
     adapter: SpTransAdapter = SpTransAdapter()
 
-    bus_route = BusRoute(
-        route_id=8075,
-        route=RouteIdentifier(bus_line="8075", bus_direction=1),
-    )
+    routes: list[BusRoute] = await adapter.search_routes("XYZNONEXISTENT999")
 
-    with pytest.raises(RuntimeError, match="not authenticated"):
-        await adapter.get_bus_positions(bus_route)
+    assert isinstance(routes, list)
+    assert len(routes) == 0

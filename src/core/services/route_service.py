@@ -1,6 +1,6 @@
 """Route service - Business logic for route and bus position queries."""
 
-from ..models.bus import BusPosition, BusRoute, RouteIdentifier
+from ..models.bus import BusPosition, BusRoute
 from ..models.route_shape import RouteShape
 from ..ports.bus_provider_port import BusProviderPort
 from ..ports.gtfs_repository import GTFSRepositoryPort
@@ -14,60 +14,57 @@ class RouteService:
     real-time bus information and GTFS data for route shapes.
     """
 
-    def __init__(self, bus_provider: BusProviderPort, gtfs_repository: GTFSRepositoryPort):
+    def __init__(
+        self, bus_provider: BusProviderPort, gtfs_repository: GTFSRepositoryPort
+    ):
         """
         Initialize the route service.
 
         Args:
-            bus_provider: Implementation of BusProviderPort
-            gtfs_repository: Implementation of GTFSRepositoryPort
+            bus_provider: Implementation of BusProviderPort.
+            gtfs_repository: Implementation of GTFSRepositoryPort.
         """
         self.bus_provider = bus_provider
         self.gtfs_repository = gtfs_repository
 
-    async def get_bus_positions(self, bus_route: BusRoute) -> list[BusPosition]:
+    async def get_bus_positions(self, routes: list[BusRoute]) -> list[BusPosition]:
         """
-        Get current positions for specified bus routes.
+        Get current positions for specified routes.
 
         Args:
-            routes: List of route identifiers to query
+            routes: List of BusRoute objects containing route info.
 
         Returns:
-            List of current bus positions
+            List of current bus positions.
 
         Raises:
-            Exception: If API authentication fails or request fails
+            RuntimeError: If API request fails.
         """
-        # Ensure we're authenticated
-        await self.bus_provider.authenticate()
+        return await self.bus_provider.get_bus_positions(routes)
 
-        # Get positions
-        return await self.bus_provider.get_bus_positions(bus_route)
-
-    async def get_route_details(self, route: RouteIdentifier) -> list[BusRoute]:
+    async def search_routes(self, query: str) -> list[BusRoute]:
         """
-        Get detailed information about a route.
+        Search for bus routes matching a query string.
 
         Args:
-            route: Route identifier
+            query: Search term (e.g., "809" or "Vila Nova Conceição").
 
         Returns:
-            Route details
+            List of matching bus routes.
 
         Raises:
-            Exception: If route not found or API fails
+            RuntimeError: If API request fails.
         """
-        await self.bus_provider.authenticate()
-        return await self.bus_provider.get_route_details(route)
+        return await self.bus_provider.search_routes(query)
 
-    def get_route_shape(self, route_id: str) -> RouteShape | None:
+    def get_route_shape(self, bus_line: str) -> RouteShape | None:
         """
         Get the geographic shape coordinates of a route from GTFS data.
 
         Args:
-            route_id: Route identifier (e.g., "1012-10")
+            bus_line: Bus line identifier (e.g., "1012-10").
 
         Returns:
-            RouteShape with ordered coordinates, or None if route not found
+            RouteShape with ordered coordinates, or None if route not found.
         """
-        return self.gtfs_repository.get_route_shape(route_id)
+        return self.gtfs_repository.get_route_shape(bus_line)

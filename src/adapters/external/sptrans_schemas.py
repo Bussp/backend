@@ -9,33 +9,33 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+class SPTransLineInfo(BaseModel):
+    """Schema for SPTrans line information response."""
 
-class SPTransRouteResponse(BaseModel):
-    """Schema for SPTrans route response."""
+    cl: int = Field(..., description="Route code (internal SPTrans code)")
+    lc: bool = Field(..., description="Is circular route")
+    lt: str = Field(..., description="Line number (e.g., '8000')")
+    sl: int = Field(..., description="Direction (1 = ida, 2 = volta)")
+    tl: int = Field(..., description="Line type (10 = urban, etc.)")
+    tp: str = Field(..., description="Primary terminal")
+    ts: str = Field(..., description="Secondary terminal")
 
-    cl: int = Field(..., description="Route code")
-    lc: bool = Field(..., description="Is circular")
-    lt: str = Field(..., description="Main direction")
-    tl: int = Field(..., description="Type")
-    sl: int = Field(..., description="Secondary type")
-    tp: str = Field(..., description="Terminal principal")
-    ts: str = Field(..., description="Terminal secundário")
+class SPTransLineSearchResponse(BaseModel):
+    """Schema for SPTrans line search response item."""
+    results: list[SPTransLineInfo] = Field(..., description="List of line info results")
 
+class SPTransVehicle(BaseModel):
+    """Schema for SPTrans vehicle position."""
 
-class SPTransVehicleResponse(BaseModel):
-    """Schema for SPTrans vehicle position response."""
-
-    p: int = Field(..., description="Route code")
+    p: str = Field(..., description="Vehicle prefix")
     a: bool = Field(..., description="Is accessible")
     ta: datetime = Field(..., description="Time updated")
-    px: int = Field(..., description="Longitude * 10^6")
-    py: int = Field(..., description="Latitude * 10^6")
+    py: float = Field(..., description="Latitude")
+    px: float = Field(..., description="Longitude")
 
 
 class SPTransPositionsResponse(BaseModel):
-    """Schema for SPTrans positions response."""
+    """Schema for SPTrans positions API response."""
 
-    hr: datetime = Field(..., alias="currentTime", description="Current time")
-    vs: list[SPTransVehicleResponse] = Field(..., alias="vehicles", description="List of vehicles")
-
-    model_config = {"populate_by_name": True}
+    hr: str = Field(..., description="Response time")
+    vs: list[SPTransVehicle] = Field(default_factory=list, description="List of vehicles")

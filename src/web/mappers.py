@@ -5,12 +5,13 @@ These functions translate between the API layer and the domain layer,
 maintaining the separation of concerns.
 """
 
-from ..core.models.bus import BusPosition, RouteIdentifier
+from ..core.models.bus import BusPosition, BusRoute, RouteIdentifier
 from ..core.models.coordinate import Coordinate
 from ..core.models.route_shape import RouteShape
 from ..core.models.user import User
 from .schemas import (
     BusPositionSchema,
+    BusRouteSchema,
     CoordinateSchema,
     RouteIdentifierSchema,
     RouteShapeResponse,
@@ -89,6 +90,68 @@ def map_route_identifier_domain_to_schema(
     )
 
 
+def map_bus_route_schema_to_domain(schema: BusRouteSchema) -> BusRoute:
+    """
+    Map a BusRouteSchema to a BusRoute domain model.
+
+    Args:
+        schema: BusRouteSchema from API
+
+    Returns:
+        BusRoute domain model
+    """
+    return BusRoute(
+        route_id=schema.route_id,
+        route=map_route_identifier_schema_to_domain(schema.route),
+    )
+
+
+def map_bus_route_schema_list_to_domain(
+    schemas: list[BusRouteSchema],
+) -> list[BusRoute]:
+    """
+    Map a list of BusRouteSchema to BusRoute domain models.
+
+    Args:
+        schemas: List of BusRouteSchema from API
+
+    Returns:
+        List of BusRoute domain models
+    """
+    return [map_bus_route_schema_to_domain(schema) for schema in schemas]
+
+
+def map_bus_route_domain_to_schema(bus_route: BusRoute) -> BusRouteSchema:
+    """
+    Map a BusRoute domain model to a BusRouteSchema.
+
+    Args:
+        bus_route: BusRoute domain model
+
+    Returns:
+        BusRouteSchema for API
+    """
+    return BusRouteSchema(
+        route_id=bus_route.route_id,
+        route=map_route_identifier_domain_to_schema(bus_route.route),
+    )
+
+
+def map_bus_route_domain_list_to_schema(
+    bus_routes: list[BusRoute],
+) -> list[BusRouteSchema]:
+    """
+    Map a list of BusRoute domain models to BusRouteSchema list.
+
+    Args:
+        bus_routes: List of BusRoute domain models
+
+    Returns:
+        List of BusRouteSchema for API
+    """
+    return [map_bus_route_domain_to_schema(bus_route) for bus_route in bus_routes]
+
+
 def map_coordinate_domain_to_schema(coord: Coordinate) -> CoordinateSchema:
     """
     Map a Coordinate domain model to a CoordinateSchema.
@@ -153,5 +216,7 @@ def map_route_shape_to_response(shape: RouteShape) -> RouteShapeResponse:
     return RouteShapeResponse(
         route_id=shape.route_id,
         shape_id=shape.shape_id,
-        points=[map_coordinate_domain_to_schema(point.coordinate) for point in shape.points],
+        points=[
+            map_coordinate_domain_to_schema(point.coordinate) for point in shape.points
+        ],
     )

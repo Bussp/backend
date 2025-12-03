@@ -9,16 +9,15 @@ from src.core.models.coordinate import Coordinate
 from src.web.schemas import (
     BusPositionsRequest,
     BusRouteSchema,
-    BusRoutesDetailsRequest,
     RouteIdentifierSchema,
 )
 
 from .conftest import create_user_and_login
 
 
-class TestRouteDetails:
+class TestRouteSearch:
     @pytest.mark.asyncio
-    async def test_get_route_details_returns_successfully(
+    async def test_search_routes_returns_successfully(
         self,
         client: AsyncClient,
     ) -> None:
@@ -36,27 +35,14 @@ class TestRouteDetails:
             )
         ]
 
-        with (
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
-                new_callable=AsyncMock,
-                return_value=True,
-            ),
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.get_route_details",
-                new_callable=AsyncMock,
-                return_value=mock_bus_routes,
-            ),
+        with patch(
+            "src.adapters.external.sptrans_adapter.SpTransAdapter.search_routes",
+            new_callable=AsyncMock,
+            return_value=mock_bus_routes,
         ):
-            request_data = BusRoutesDetailsRequest(
-                routes=[
-                    RouteIdentifierSchema(bus_line="8000", bus_direction=1),
-                ]
-            )
-
-            response = await client.post(
-                "/routes/details",
-                json=request_data.model_dump(),
+            response = await client.get(
+                "/routes/search",
+                params={"query": "8000"},
                 headers=auth["headers"],
             )
 
@@ -74,7 +60,7 @@ class TestRouteDetails:
             assert first_route["route"]["bus_direction"] == 1
 
     @pytest.mark.asyncio
-    async def test_get_route_details_with_multiple_lines(
+    async def test_search_routes_returns_multiple_results(
         self,
         client: AsyncClient,
     ) -> None:
@@ -85,41 +71,25 @@ class TestRouteDetails:
         }
         auth = await create_user_and_login(client, user_data)
 
-        mock_routes_8000 = [
+        mock_bus_routes = [
             BusRoute(
                 route_id=12345,
                 route=RouteIdentifier(bus_line="8000", bus_direction=1),
             ),
-        ]
-        mock_routes_9000 = [
             BusRoute(
-                route_id=67890,
-                route=RouteIdentifier(bus_line="9000", bus_direction=1),
+                route_id=12346,
+                route=RouteIdentifier(bus_line="8000", bus_direction=2),
             ),
         ]
 
-        with (
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
-                new_callable=AsyncMock,
-                return_value=True,
-            ),
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.get_route_details",
-                new_callable=AsyncMock,
-                side_effect=[mock_routes_8000, mock_routes_9000],
-            ),
+        with patch(
+            "src.adapters.external.sptrans_adapter.SpTransAdapter.search_routes",
+            new_callable=AsyncMock,
+            return_value=mock_bus_routes,
         ):
-            request_data = BusRoutesDetailsRequest(
-                routes=[
-                    RouteIdentifierSchema(bus_line="8000", bus_direction=1),
-                    RouteIdentifierSchema(bus_line="9000", bus_direction=1),
-                ]
-            )
-
-            response = await client.post(
-                "/routes/details",
-                json=request_data.model_dump(),
+            response = await client.get(
+                "/routes/search",
+                params={"query": "8000"},
                 headers=auth["headers"],
             )
 
@@ -129,89 +99,10 @@ class TestRouteDetails:
             assert len(data["routes"]) == 2
             route_ids = [r["route_id"] for r in data["routes"]]
             assert 12345 in route_ids
-            assert 67890 in route_ids
+            assert 12346 in route_ids
 
     @pytest.mark.asyncio
-    async def test_get_route_details_returns_empty_for_unknown_line(
-        self,
-        client: AsyncClient,
-    ) -> None:
-        user_data = {
-            "name": "Test User",
-            "email": "test@example.com",
-            "password": "securepassword123",
-        }
-        auth = await create_user_and_login(client, user_data)
-
-        with (
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
-                new_callable=AsyncMock,
-                return_value=True,
-            ),
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.get_route_details",
-                new_callable=AsyncMock,
-                return_value=[],
-            ),
-        ):
-            request_data = BusRoutesDetailsRequest(
-                routes=[
-                    RouteIdentifierSchema(bus_line="UNKNOWN", bus_direction=1),
-                ]
-            )
-
-            response = await client.post(
-                "/routes/details",
-                json=request_data.model_dump(),
-                headers=auth["headers"],
-            )
-
-            assert response.status_code == 200
-            data = response.json()
-            assert data["routes"] == []
-
-    @pytest.mark.asyncio
-    async def test_get_route_details_returns_500_on_api_error(
-        self,
-        client: AsyncClient,
-    ) -> None:
-        user_data = {
-            "name": "Test User",
-            "email": "test@example.com",
-            "password": "securepassword123",
-        }
-        auth = await create_user_and_login(client, user_data)
-
-        with (
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
-                new_callable=AsyncMock,
-                return_value=True,
-            ),
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.get_route_details",
-                new_callable=AsyncMock,
-                side_effect=RuntimeError("API unavailable"),
-            ),
-        ):
-            request_data = BusRoutesDetailsRequest(
-                routes=[
-                    RouteIdentifierSchema(bus_line="8000", bus_direction=1),
-                ]
-            )
-
-            response = await client.post(
-                "/routes/details",
-                json=request_data.model_dump(),
-                headers=auth["headers"],
-            )
-
-            assert response.status_code == 500
-            assert "Failed to retrieve route details" in response.json()["detail"]
-
-    @pytest.mark.asyncio
-    async def test_get_route_details_with_empty_routes_list(
+    async def test_search_routes_returns_empty_for_unknown_query(
         self,
         client: AsyncClient,
     ) -> None:
@@ -223,33 +114,71 @@ class TestRouteDetails:
         auth = await create_user_and_login(client, user_data)
 
         with patch(
-            "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
+            "src.adapters.external.sptrans_adapter.SpTransAdapter.search_routes",
             new_callable=AsyncMock,
-            return_value=True,
+            return_value=[],
         ):
-            request_data = BusRoutesDetailsRequest(routes=[])
-
-            response = await client.post(
-                "/routes/details",
-                json=request_data.model_dump(),
+            response = await client.get(
+                "/routes/search",
+                params={"query": "UNKNOWN"},
                 headers=auth["headers"],
             )
 
             assert response.status_code == 200
-            assert response.json()["routes"] == []
+            data = response.json()
+            assert data["routes"] == []
 
     @pytest.mark.asyncio
-    async def test_get_route_details_without_auth_fails(
+    async def test_search_routes_returns_500_on_api_error(
         self,
         client: AsyncClient,
     ) -> None:
-        request_data = BusRoutesDetailsRequest(
-            routes=[
-                RouteIdentifierSchema(bus_line="8000", bus_direction=1),
-            ]
+        user_data = {
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "securepassword123",
+        }
+        auth = await create_user_and_login(client, user_data)
+
+        with patch(
+            "src.adapters.external.sptrans_adapter.SpTransAdapter.search_routes",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("API unavailable"),
+        ):
+            response = await client.get(
+                "/routes/search",
+                params={"query": "8000"},
+                headers=auth["headers"],
+            )
+
+            assert response.status_code == 500
+            assert "Failed to search routes" in response.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_search_routes_returns_422_when_query_missing(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        user_data = {
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "securepassword123",
+        }
+        auth = await create_user_and_login(client, user_data)
+
+        response = await client.get(
+            "/routes/search",
+            headers=auth["headers"],
         )
 
-        response = await client.post("/routes/details", json=request_data.model_dump())
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_search_routes_without_auth_fails(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        response = await client.get("/routes/search", params={"query": "8000"})
 
         assert response.status_code == 401
 
@@ -280,17 +209,10 @@ class TestBusPositions:
             ),
         ]
 
-        with (
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
-                new_callable=AsyncMock,
-                return_value=True,
-            ),
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.get_bus_positions",
-                new_callable=AsyncMock,
-                return_value=mock_positions,
-            ),
+        with patch(
+            "src.adapters.external.sptrans_adapter.SpTransAdapter.get_bus_positions",
+            new_callable=AsyncMock,
+            return_value=mock_positions,
         ):
             request_data = BusPositionsRequest(
                 routes=[
@@ -334,17 +256,10 @@ class TestBusPositions:
         }
         auth = await create_user_and_login(client, user_data)
 
-        with (
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
-                new_callable=AsyncMock,
-                return_value=True,
-            ),
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.get_bus_positions",
-                new_callable=AsyncMock,
-                side_effect=ValueError("Error fetching positions"),
-            ),
+        with patch(
+            "src.adapters.external.sptrans_adapter.SpTransAdapter.get_bus_positions",
+            new_callable=AsyncMock,
+            side_effect=ValueError("Error fetching positions"),
         ):
             request_data = BusPositionsRequest(
                 routes=[
@@ -376,17 +291,10 @@ class TestBusPositions:
         }
         auth = await create_user_and_login(client, user_data)
 
-        with (
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
-                new_callable=AsyncMock,
-                return_value=True,
-            ),
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.get_bus_positions",
-                new_callable=AsyncMock,
-                return_value=[],
-            ),
+        with patch(
+            "src.adapters.external.sptrans_adapter.SpTransAdapter.get_bus_positions",
+            new_callable=AsyncMock,
+            return_value=[],
         ):
             request_data = BusPositionsRequest(
                 routes=[
@@ -421,14 +329,12 @@ class TestBusPositions:
         }
         auth = await create_user_and_login(client, user_data)
 
-        mock_positions_8000 = [
+        mock_positions = [
             BusPosition(
                 route=RouteIdentifier(bus_line="8000", bus_direction=1),
                 position=Coordinate(latitude=-23.550520, longitude=-46.633308),
                 time_updated=datetime.now(UTC),
             ),
-        ]
-        mock_positions_9000 = [
             BusPosition(
                 route=RouteIdentifier(bus_line="9000", bus_direction=2),
                 position=Coordinate(latitude=-23.560520, longitude=-46.643308),
@@ -436,17 +342,10 @@ class TestBusPositions:
             ),
         ]
 
-        with (
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
-                new_callable=AsyncMock,
-                return_value=True,
-            ),
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.get_bus_positions",
-                new_callable=AsyncMock,
-                side_effect=[mock_positions_8000, mock_positions_9000],
-            ),
+        with patch(
+            "src.adapters.external.sptrans_adapter.SpTransAdapter.get_bus_positions",
+            new_callable=AsyncMock,
+            return_value=mock_positions,
         ):
             request_data = BusPositionsRequest(
                 routes=[
@@ -476,7 +375,7 @@ class TestBusPositions:
             assert "9000" in bus_lines
 
     @pytest.mark.asyncio
-    async def test_get_bus_position_returns_500_when_authentication_failure(
+    async def test_get_bus_position_returns_500_when_api_error(
         self,
         client: AsyncClient,
     ) -> None:
@@ -488,9 +387,9 @@ class TestBusPositions:
         auth = await create_user_and_login(client, user_data)
 
         with patch(
-            "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
+            "src.adapters.external.sptrans_adapter.SpTransAdapter.get_bus_positions",
             new_callable=AsyncMock,
-            side_effect=RuntimeError("Authentication failed"),
+            side_effect=RuntimeError("API error"),
         ):
             request_data = BusPositionsRequest(
                 routes=[
@@ -521,7 +420,7 @@ class TestBusPositions:
         }
         auth = await create_user_and_login(client, user_data)
 
-        request_data = {
+        invalid_request_data: dict[str, list[dict[str, int | dict[str, str | int]]]] = {
             "routes": [
                 {
                     "route_id": 12345,
@@ -532,7 +431,7 @@ class TestBusPositions:
 
         response = await client.post(
             "/routes/positions",
-            json=request_data,
+            json=invalid_request_data,
             headers=auth["headers"],
         )
 
@@ -550,17 +449,10 @@ class TestBusPositions:
         }
         auth = await create_user_and_login(client, user_data)
 
-        with (
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.authenticate",
-                new_callable=AsyncMock,
-                return_value=True,
-            ),
-            patch(
-                "src.adapters.external.sptrans_adapter.SpTransAdapter.get_bus_positions",
-                new_callable=AsyncMock,
-                return_value=[],
-            ),
+        with patch(
+            "src.adapters.external.sptrans_adapter.SpTransAdapter.get_bus_positions",
+            new_callable=AsyncMock,
+            return_value=[],
         ):
             request_data = BusPositionsRequest(routes=[])
 
@@ -587,7 +479,9 @@ class TestBusPositions:
             ]
         )
 
-        response = await client.post("/routes/positions", json=request_data.model_dump())
+        response = await client.post(
+            "/routes/positions", json=request_data.model_dump()
+        )
 
         assert response.status_code == 401
 

@@ -109,7 +109,7 @@ class BusPositionsRequest(BaseModel):
     """Request schema for querying bus positions."""
 
     routes: list[BusRouteSchema] = Field(
-        ..., description="List of resolved routes (with route_id) to query positions"
+        ..., description="List of routes to query positions"
     )
 
 
@@ -119,19 +119,21 @@ class BusPositionsResponse(BaseModel):
     buses: list[BusPositionSchema] = Field(..., description="List of bus positions")
 
 
-class BusRoutesDetailsRequest(BaseModel):
-    """Request schema for resolving route details."""
+class RouteSearchRequest(BaseModel):
+    """Request schema for searching routes."""
 
-    routes: list[RouteIdentifierSchema] = Field(
-        ..., description="List of routes (line + direction) to resolve"
+    query: str = Field(
+        ...,
+        min_length=1,
+        description="Search term (e.g., '809' or 'Vila Nova Conceição')",
     )
 
 
-class BusRoutesDetailsResponse(BaseModel):
-    """Response schema for route details."""
+class RouteSearchResponse(BaseModel):
+    """Response schema for route search results."""
 
     routes: list[BusRouteSchema] = Field(
-        ..., description="List of resolved routes with provider IDs"
+        ..., description="List of matching routes with provider IDs"
     )
 
 
@@ -140,7 +142,9 @@ class RouteShapeResponse(BaseModel):
 
     route_id: str = Field(..., description="Route identifier")
     shape_id: str = Field(..., description="GTFS shape identifier")
-    points: list[CoordinateSchema] = Field(..., description="Ordered list of coordinates")
+    points: list[CoordinateSchema] = Field(
+        ..., description="Ordered list of coordinates"
+    )
 
 
 # ===== Ranking Schemas =====

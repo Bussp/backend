@@ -1,10 +1,9 @@
 """Coordinate domain model."""
 
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass
-class Coordinate:
+class Coordinate(BaseModel):
     """
     Geographic coordinate representation.
 
@@ -15,3 +14,5 @@ class Coordinate:
 
     latitude: float
     longitude: float
+
+    model_config = {"frozen": True}

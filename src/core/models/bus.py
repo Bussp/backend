@@ -1,13 +1,14 @@
 """Bus-related domain models."""
 
-from dataclasses import dataclass
 from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, Field
 
 from .coordinate import Coordinate
 
 
-@dataclass
-class RouteIdentifier:
+class RouteIdentifier(BaseModel):
     """
     Identifier for a bus route.
 
@@ -17,11 +18,14 @@ class RouteIdentifier:
     """
 
     bus_line: str
-    bus_direction: int
+    bus_direction: Literal[1, 2] = Field(
+        ..., description="Direction (1 = ida, 2 = volta)"
+    )
+
+    model_config = {"frozen": True}
 
 
-@dataclass
-class BusRoute:
+class BusRoute(BaseModel):
     """
     Bus route information.
 
@@ -33,9 +37,10 @@ class BusRoute:
     route_id: int
     route: RouteIdentifier
 
+    model_config = {"frozen": True}
 
-@dataclass
-class BusPosition:
+
+class BusPosition(BaseModel):
     """
     Real-time position of a bus.
 
@@ -48,3 +53,5 @@ class BusPosition:
     route: RouteIdentifier
     position: Coordinate
     time_updated: datetime
+
+    model_config = {"frozen": True}

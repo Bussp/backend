@@ -23,13 +23,9 @@ def client() -> TestClient:
 
 @pytest.fixture
 def mock_service() -> RouteService:
-    """
-    Cria um mock fortemente tipado do RouteService,
-    mas com métodos assíncronos (AsyncMock).
-    """
     service = AsyncMock(spec=RouteService)
     typed_service: RouteService = service
-    typed_service.get_route_details = AsyncMock()  # type: ignore[method-assign]
+    typed_service.search_routes = AsyncMock()  # type: ignore[method-assign]
     typed_service.get_bus_positions = AsyncMock()  # type: ignore[method-assign]
     return typed_service
 
@@ -49,162 +45,206 @@ def override_dependency(
     app.dependency_overrides.clear()
 
 
-# =========================
-# /routes/details
-# =========================
+class TestSearchRoutes:
+
+    @pytest.mark.asyncio
+    async def test_search_endpoint_success(
+        self, client: TestClient, mock_service: RouteService
+    ) -> None:
+        bus_route_1 = BusRoute(route_id=2044, route=RouteIdentifier(bus_line="8075", bus_direction=1))
+        bus_route_2 = BusRoute(route_id=34812, route=RouteIdentifier(bus_line="8075", bus_direction=2))
+
+        mock_service.search_routes.return_value = [bus_route_1, bus_route_2]  # type: ignore[attr-defined]
+
+        response = client.get("/routes/search", params={"query": "8075"})
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert "routes" in data
+        assert len(data["routes"]) == 2
+
+        routes = data["routes"]
+
+        assert routes[0]["route_id"] == 2044
+        assert routes[0]["route"]["bus_line"] == "8075"
+
+        assert routes[1]["route_id"] == 34812
+        assert routes[1]["route"]["bus_line"] == "8075"
+
+        mock_service.search_routes.assert_awaited_once()  # type: ignore[attr-defined]
+        called_arg = mock_service.search_routes.await_args.args[0]  # type: ignore[attr-defined]
+        assert called_arg == "8075"
+
+    @pytest.mark.asyncio
+    async def test_search_endpoint_with_destination_name(
+        self, client: TestClient, mock_service: RouteService
+    ) -> None:
+        """Test search with destination name query."""
+        route_identifier = RouteIdentifier(bus_line="809", bus_direction=1)
+        bus_route = BusRoute(route_id=1234, route=route_identifier)
+
+        mock_service.search_routes.return_value = [bus_route]  # type: ignore[attr-defined]
+
+        response = client.get("/routes/search", params={"query": "Vila Nova Conceição"})
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert "routes" in data
+        assert len(data["routes"]) == 1
+
+        mock_service.search_routes.assert_awaited_once()  # type: ignore[attr-defined]
+        called_arg = mock_service.search_routes.await_args.args[0]  # type: ignore[attr-defined]
+        assert called_arg == "Vila Nova Conceição"
+
+    @pytest.mark.asyncio
+    async def test_search_endpoint_empty_results(
+        self, client: TestClient, mock_service: RouteService
+    ) -> None:
+        """Test search returning empty results."""
+        mock_service.search_routes.return_value = []  # type: ignore[attr-defined]
+
+        response = client.get("/routes/search", params={"query": "UNKNOWN"})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["routes"] == []
+
+    @pytest.mark.asyncio
+    async def test_search_endpoint_error_returns_500(
+        self, client: TestClient, mock_service: RouteService
+    ) -> None:
+        """Test that service exception returns 500 error."""
+        mock_service.search_routes.side_effect = RuntimeError("boom")  # type: ignore[attr-defined]
+
+        response = client.get("/routes/search", params={"query": "8075"})
+
+        assert response.status_code == 500
+        body = response.json()
+        assert "Failed to search routes" in body["detail"]
 
 
-@pytest.mark.asyncio
-async def test_details_endpoint_success(client: TestClient, mock_service: RouteService) -> None:
-    """
-    Testa o endpoint POST /routes/details garantindo que:
-    - Ele chama RouteService.get_route_details()
-    - Ele retorna uma lista achatada de rotas
-    """
+class TestBusPositions:
+    """Tests for the /routes/positions endpoint."""
 
-    # ----- Arrange -----
-    # domínio
-    route_identifier = RouteIdentifier(bus_line="8075", bus_direction=1)
-    bus_route_1 = BusRoute(route_id=2044, route=route_identifier)
-    bus_route_2 = BusRoute(route_id=34812, route=route_identifier)
+    @pytest.mark.asyncio
+    async def test_positions_endpoint_success(
+        self, client: TestClient, mock_service: RouteService
+    ) -> None:
+        """Test successful positions retrieval."""
+        route_identifier = RouteIdentifier(bus_line="8075-10", bus_direction=1)
 
-    # get_route_details agora retorna list[BusRoute]
-    mock_service.get_route_details.return_value = [bus_route_1, bus_route_2]  # type: ignore[attr-defined]
+        position = BusPosition(
+            route=route_identifier,
+            position=Coordinate(latitude=-23.5, longitude=-46.6),
+            time_updated=datetime.now(UTC),
+        )
 
-    payload = {
-        "routes": [
-            {"bus_line": "8075"},
-        ]
-    }
+        mock_service.get_bus_positions.return_value = [position]  # type: ignore[attr-defined]
 
-    # ----- Act -----
-    response = client.post("/routes/details", json=payload)
+        payload = {
+            "routes": [
+                {
+                    "route_id": 2044,
+                    "route": {"bus_line": "8075-10", "bus_direction": 1},
+                }
+            ]
+        }
 
-    # ----- Assert -----
-    assert response.status_code == 200
-    data = response.json()
+        response = client.post("/routes/positions", json=payload)
 
-    assert "routes" in data
-    assert len(data["routes"]) == 2
+        assert response.status_code == 200
+        data = response.json()
 
-    routes = data["routes"]
+        assert "buses" in data
+        assert len(data["buses"]) == 1
 
-    assert routes[0]["route_id"] == 2044
-    assert routes[0]["route"]["bus_line"] == "8075"
+        bus = data["buses"][0]
 
-    assert routes[1]["route_id"] == 34812
-    assert routes[1]["route"]["bus_line"] == "8075"
+        assert bus["route"]["bus_line"] == "8075-10"
+        assert "position" in bus
+        assert "latitude" in bus["position"]
+        assert "longitude" in bus["position"]
+        assert "time_updated" in bus
 
-    # garante que o service foi chamado uma vez
-    mock_service.get_route_details.assert_awaited_once()  # type: ignore[attr-defined]
-    called_arg = mock_service.get_route_details.await_args.args[0]  # type: ignore[attr-defined]
-    assert isinstance(called_arg, RouteIdentifier)
-    assert called_arg.bus_line == "8075"
-    # direção padrão que estamos usando
-    assert called_arg.bus_direction == 1
+        mock_service.get_bus_positions.assert_awaited_once()  # type: ignore[attr-defined]
+        called_arg = mock_service.get_bus_positions.await_args.args[0]  # type: ignore[attr-defined]
+        assert len(called_arg) == 1
+        assert called_arg[0].route_id == 2044
+        assert called_arg[0].route.bus_line == "8075-10"
 
+    @pytest.mark.asyncio
+    async def test_positions_endpoint_multiple_routes(
+        self, client: TestClient, mock_service: RouteService
+    ) -> None:
+        """Test positions for multiple routes."""
+        position1 = BusPosition(
+            route=RouteIdentifier(bus_line="8075-10", bus_direction=1),
+            position=Coordinate(latitude=-23.5, longitude=-46.6),
+            time_updated=datetime.now(UTC),
+        )
+        position2 = BusPosition(
+            route=RouteIdentifier(bus_line="809-10", bus_direction=1),
+            position=Coordinate(latitude=-23.6, longitude=-46.7),
+            time_updated=datetime.now(UTC),
+        )
 
-@pytest.mark.asyncio
-async def test_details_endpoint_error_returns_500(
-    client: TestClient, mock_service: RouteService
-) -> None:
-    """
-    Testa se o controller retorna 500 caso o service levante exception
-    em /routes/details.
-    """
+        mock_service.get_bus_positions.return_value = [position1, position2]  # type: ignore[attr-defined]
 
-    mock_service.get_route_details.side_effect = RuntimeError("boom")  # type: ignore[attr-defined]
+        payload = {
+            "routes": [
+                {
+                    "route_id": 2044,
+                    "route": {"bus_line": "8075-10", "bus_direction": 1},
+                },
+                {
+                    "route_id": 5678,
+                    "route": {"bus_line": "809-10", "bus_direction": 1},
+                },
+            ]
+        }
 
-    payload = {"routes": [{"bus_line": "8075"}]}
+        response = client.post("/routes/positions", json=payload)
 
-    response = client.post("/routes/details", json=payload)
+        assert response.status_code == 200
+        data = response.json()
 
-    assert response.status_code == 500
-    body = response.json()
-    assert "Failed to retrieve route details" in body["detail"]
+        assert len(data["buses"]) == 2
+        mock_service.get_bus_positions.assert_awaited_once()  # type: ignore[attr-defined]
 
+    @pytest.mark.asyncio
+    async def test_positions_endpoint_error_returns_500(
+        self, client: TestClient, mock_service: RouteService
+    ) -> None:
+        """Test that service exception returns 500 error."""
+        mock_service.get_bus_positions.side_effect = RuntimeError("boom")  # type: ignore[attr-defined]
 
-# =========================
-# /routes/positions
-# =========================
+        payload = {
+            "routes": [
+                {
+                    "route_id": 2044,
+                    "route": {"bus_line": "8075-10", "bus_direction": 1},
+                }
+            ]
+        }
 
+        response = client.post("/routes/positions", json=payload)
 
-@pytest.mark.asyncio
-async def test_positions_endpoint_success(client: TestClient, mock_service: RouteService) -> None:
-    """
-    Testa o endpoint POST /routes/positions garantindo que:
-    - Ele chama RouteService.get_bus_positions()
-    - Ele retorna os dados de posição corretamente
-    """
+        assert response.status_code == 500
+        body = response.json()
+        assert "Failed to retrieve bus positions" in body["detail"]
 
-    # ----- Arrange -----
-    route_identifier = RouteIdentifier(bus_line="8075", bus_direction=1)
+    @pytest.mark.asyncio
+    async def test_positions_endpoint_empty_routes(
+        self, client: TestClient, mock_service: RouteService
+    ) -> None:
+        """Test positions with empty routes list."""
+        mock_service.get_bus_positions.return_value = []  # type: ignore[attr-defined]
 
-    position = BusPosition(
-        route=route_identifier,
-        position=Coordinate(latitude=-23.5, longitude=-46.6),
-        time_updated=datetime.now(UTC),
-    )
+        payload = {"routes": []}
 
-    mock_service.get_bus_positions.return_value = [position]  # type: ignore[attr-defined]
+        response = client.post("/routes/positions", json=payload)
 
-    payload = {
-        "routes": [
-            {
-                "route_id": 2044,
-                "route": {"bus_line": "8075"},
-            }
-        ]
-    }
-
-    # ----- Act -----
-    response = client.post("/routes/positions", json=payload)
-
-    # ----- Assert -----
-    assert response.status_code == 200
-    data = response.json()
-
-    assert "buses" in data
-    assert len(data["buses"]) == 1
-
-    bus = data["buses"][0]
-
-    assert bus["route"]["bus_line"] == "8075"
-    assert "position" in bus
-    assert "latitude" in bus["position"]
-    assert "longitude" in bus["position"]
-    assert "time_updated" in bus
-
-    mock_service.get_bus_positions.assert_awaited_once()  # type: ignore[attr-defined]
-    called_arg = mock_service.get_bus_positions.await_args.args[0]  # type: ignore[attr-defined]
-    assert isinstance(called_arg, BusRoute)
-    assert called_arg.route.bus_line == "8075"
-    assert called_arg.route.bus_direction == 1
-    assert called_arg.route_id == 2044
-
-
-@pytest.mark.asyncio
-async def test_positions_endpoint_error_returns_500(
-    client: TestClient, mock_service: RouteService
-) -> None:
-    """
-    Testa se o controller retorna 500 caso o service levante exception
-    em /routes/positions.
-    """
-
-    mock_service.get_bus_positions.side_effect = RuntimeError("boom")  # type: ignore[attr-defined]
-
-    payload = {
-        "routes": [
-            {
-                "route_id": 2044,
-                "route": {"bus_line": "8075"},
-            }
-        ]
-    }
-
-    response = client.post("/routes/positions", json=payload)
-
-    assert response.status_code == 500
-    body = response.json()
-    assert "Failed to retrieve bus positions" in body["detail"]
+        assert response.status_code == 200
+        assert response.json()["buses"] == []
