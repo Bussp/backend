@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
@@ -25,13 +26,16 @@ def mock_service() -> RouteService:
     mas com métodos assíncronos (AsyncMock).
     """
     service = AsyncMock(spec=RouteService)
-
-    typed_service: RouteService = service  # type: ignore[assignment]
+    # Cast to RouteService to satisfy type checker
+    typed_service: RouteService = service
+    # Set up return values with proper types - these are AsyncMock instances
+    typed_service.get_route_details = AsyncMock()  # type: ignore[method-assign]
+    typed_service.get_bus_positions = AsyncMock()  # type: ignore[method-assign]
     return typed_service
 
 
 @pytest.fixture(autouse=True)
-def override_dependency(mock_service: RouteService) -> None:
+def override_dependency(mock_service: RouteService) -> Generator[None, None, None]:
     """
     Override da dependência get_route_service para usar o mock.
     """
@@ -60,7 +64,7 @@ async def test_details_endpoint_success(client: TestClient, mock_service: RouteS
     bus_route_2 = BusRoute(route_id=34812, route=route_identifier)
 
     # get_route_details agora retorna list[BusRoute]
-    mock_service.get_route_details.return_value = [bus_route_1, bus_route_2]  # type: ignore[assignment]
+    mock_service.get_route_details.return_value = [bus_route_1, bus_route_2]  # type: ignore[attr-defined]
 
     payload = {
         "routes": [
@@ -87,8 +91,8 @@ async def test_details_endpoint_success(client: TestClient, mock_service: RouteS
     assert routes[1]["route"]["bus_line"] == "8075"
 
     # garante que o service foi chamado uma vez
-    mock_service.get_route_details.assert_awaited_once()
-    called_arg = mock_service.get_route_details.await_args.args[0]
+    mock_service.get_route_details.assert_awaited_once()  # type: ignore[attr-defined]
+    called_arg = mock_service.get_route_details.await_args.args[0]  # type: ignore[attr-defined]
     assert isinstance(called_arg, RouteIdentifier)
     assert called_arg.bus_line == "8075"
     # direção padrão que estamos usando
@@ -104,7 +108,7 @@ async def test_details_endpoint_error_returns_500(
     em /routes/details.
     """
 
-    mock_service.get_route_details.side_effect = RuntimeError("boom")  # type: ignore[assignment]
+    mock_service.get_route_details.side_effect = RuntimeError("boom")  # type: ignore[attr-defined]
 
     payload = {"routes": [{"bus_line": "8075"}]}
 
@@ -137,7 +141,7 @@ async def test_positions_endpoint_success(client: TestClient, mock_service: Rout
         time_updated=datetime.now(UTC),
     )
 
-    mock_service.get_bus_positions.return_value = [position]  # type: ignore[assignment]
+    mock_service.get_bus_positions.return_value = [position]  # type: ignore[attr-defined]
 
     payload = {
         "routes": [
@@ -166,8 +170,8 @@ async def test_positions_endpoint_success(client: TestClient, mock_service: Rout
     assert "longitude" in bus["position"]
     assert "time_updated" in bus
 
-    mock_service.get_bus_positions.assert_awaited_once()
-    called_arg = mock_service.get_bus_positions.await_args.args[0]
+    mock_service.get_bus_positions.assert_awaited_once()  # type: ignore[attr-defined]
+    called_arg = mock_service.get_bus_positions.await_args.args[0]  # type: ignore[attr-defined]
     assert isinstance(called_arg, BusRoute)
     assert called_arg.route.bus_line == "8075"
     assert called_arg.route.bus_direction == 1
@@ -183,7 +187,7 @@ async def test_positions_endpoint_error_returns_500(
     em /routes/positions.
     """
 
-    mock_service.get_bus_positions.side_effect = RuntimeError("boom")  # type: ignore[assignment]
+    mock_service.get_bus_positions.side_effect = RuntimeError("boom")  # type: ignore[attr-defined]
 
     payload = {
         "routes": [

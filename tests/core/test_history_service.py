@@ -23,7 +23,7 @@ async def test_get_user_history_summary_no_data() -> None:
     history_repo = create_autospec(UserHistoryRepository, instance=True)
     history_repo.get_user_history = AsyncMock(return_value=None)
 
-    service = HistoryService(history_repo)  # type: ignore[arg-type]
+    service = HistoryService(history_repo)
 
     # Act
     summary_dates, summary_scores = await service.get_user_history_summary("noone@example.com")
@@ -55,7 +55,7 @@ async def test_get_user_history_summary_single_entry() -> None:
 
     history_repo.get_user_history = AsyncMock(return_value=user_history)
 
-    service = HistoryService(history_repo)  # type: ignore[arg-type]
+    service = HistoryService(history_repo)
 
     # Act
     summary_dates, summary_scores = await service.get_user_history_summary("test@example.com")
@@ -87,7 +87,7 @@ async def test_get_user_history_summary_timezone_aware() -> None:
 
     history_repo.get_user_history = AsyncMock(return_value=user_history)
 
-    service = HistoryService(history_repo)  # type: ignore[arg-type]
+    service = HistoryService(history_repo)
 
     # Act
     dates, scores = await service.get_user_history_summary("tz@example.com")
@@ -105,7 +105,7 @@ async def test_get_user_history_no_data() -> None:
     history_repo = create_autospec(UserHistoryRepository, instance=True)
     history_repo.get_user_history = AsyncMock(return_value=None)
 
-    service = HistoryService(history_repo)  # type: ignore[arg-type]
+    service = HistoryService(history_repo)
 
     # Act
     result = await service.get_user_history("noone@example.com")
@@ -136,7 +136,7 @@ async def test_get_user_history_single_entry() -> None:
 
     history_repo.get_user_history = AsyncMock(return_value=user_history)
 
-    service = HistoryService(history_repo)  # type: ignore[arg-type]
+    service = HistoryService(history_repo)
 
     # Act
     result = await service.get_user_history("test@example.com")

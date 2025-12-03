@@ -28,7 +28,7 @@ async def test_create_trip_no_user() -> None:
     trip_repo.save_trip = AsyncMock()
     user_repo.add_user_score = AsyncMock()
 
-    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
+    service = TripService(trip_repo, user_repo)
 
     # Act / Assert
     with pytest.raises(ValueError, match="not found"):
@@ -41,8 +41,8 @@ async def test_create_trip_no_user() -> None:
         )
 
     user_repo.get_user_by_email.assert_awaited_once_with("missing@example.com")
-    trip_repo.save_trip.assert_not_awaited()  # type: ignore[attr-defined]
-    user_repo.add_user_score.assert_not_awaited()  # type: ignore[attr-defined]
+    trip_repo.save_trip.assert_not_awaited()
+    user_repo.add_user_score.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -55,9 +55,9 @@ async def test_create_trip_single_user() -> None:
     test_user = User(name="Test", email="user@example.com", score=0, password="hash")
     user_repo.get_user_by_email = AsyncMock(return_value=test_user)
     user_repo.add_user_score = AsyncMock(return_value=test_user)
-    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)  # type: ignore[misc]
+    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)
 
-    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
+    service = TripService(trip_repo, user_repo)
 
     distance = 1500  # metros
     expected_score = (distance // 1000) * 77  # 77 pontos por km inteiro
@@ -77,8 +77,8 @@ async def test_create_trip_single_user() -> None:
     assert trip.email == "user@example.com"
 
     user_repo.get_user_by_email.assert_awaited_once_with("user@example.com")
-    trip_repo.save_trip.assert_awaited_once()  # type: ignore[attr-defined]
-    user_repo.add_user_score.assert_awaited_once_with("user@example.com", expected_score)  # type: ignore[attr-defined]
+    trip_repo.save_trip.assert_awaited_once()
+    user_repo.add_user_score.assert_awaited_once_with("user@example.com", expected_score)
 
 
 @pytest.mark.asyncio
@@ -91,9 +91,9 @@ async def test_create_trip_zero_distance() -> None:
     test_user = User(name="Zero", email="zero@example.com", score=0, password="hash")
     user_repo.get_user_by_email = AsyncMock(return_value=test_user)
     user_repo.add_user_score = AsyncMock(return_value=test_user)
-    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)  # type: ignore[misc]
+    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)
 
-    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
+    service = TripService(trip_repo, user_repo)
 
     # Act
     trip = await service.create_trip(
@@ -107,7 +107,7 @@ async def test_create_trip_zero_distance() -> None:
     # Assert
     assert isinstance(trip, Trip)
     assert trip.score == 0
-    user_repo.add_user_score.assert_awaited_once_with("zero@example.com", 0)  # type: ignore[attr-defined]
+    user_repo.add_user_score.assert_awaited_once_with("zero@example.com", 0)
 
 
 @pytest.mark.asyncio
@@ -125,7 +125,7 @@ async def test_create_trip_negative_distance() -> None:
     user_repo.add_user_score = AsyncMock()
     trip_repo.save_trip = AsyncMock()
 
-    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
+    service = TripService(trip_repo, user_repo)
 
     # Act & Assert
     with pytest.raises(ValueError, match="distance"):
@@ -138,8 +138,8 @@ async def test_create_trip_negative_distance() -> None:
         )
 
     # Ensure repository save/add were not called
-    trip_repo.save_trip.assert_not_awaited()  # type: ignore[attr-defined]
-    user_repo.add_user_score.assert_not_awaited()  # type: ignore[attr-defined]
+    trip_repo.save_trip.assert_not_awaited()
+    user_repo.add_user_score.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -152,9 +152,9 @@ async def test_create_trip_very_large_distance() -> None:
     test_user = User(name="Big", email="big@example.com", score=0, password="hash")
     user_repo.get_user_by_email = AsyncMock(return_value=test_user)
     user_repo.add_user_score = AsyncMock(return_value=test_user)
-    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)  # type: ignore[misc]
+    trip_repo.save_trip = AsyncMock(side_effect=lambda t: t)
 
-    service = TripService(trip_repo, user_repo)  # type: ignore[arg-type]
+    service = TripService(trip_repo, user_repo)
 
     big_distance = 10_000_000  # 10 million meters
 
@@ -170,4 +170,4 @@ async def test_create_trip_very_large_distance() -> None:
     # Assert
     expected_score = (big_distance // 1000) * 77  # 77 pontos por km inteiro
     assert trip.score == expected_score
-    user_repo.add_user_score.assert_awaited_once_with("big@example.com", expected_score)  # type: ignore[attr-defined]
+    user_repo.add_user_score.assert_awaited_once_with("big@example.com", expected_score)
