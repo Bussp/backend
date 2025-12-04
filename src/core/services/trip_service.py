@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+from ..models.bus import RouteIdentifier
 from ..models.trip import Trip
 from ..ports.trip_repository import TripRepository
 from ..ports.user_repository import UserRepository
@@ -32,10 +33,9 @@ class TripService:
     async def create_trip(
         self,
         email: str,
-        bus_line: str,
-        bus_direction: int,
+        route: RouteIdentifier,
         distance: int,
-        trip_date: datetime,
+        trip_datetime: datetime,
     ) -> Trip:
         """
         Create a new trip and update user score.
@@ -45,10 +45,9 @@ class TripService:
 
         Args:
             email: User's email
-            bus_line: Bus line taken
-            bus_direction: Direction of travel
+            route: Route identifier containing bus_line and bus_direction
             distance: Distance traveled in meters
-            trip_date: When the trip occurred
+            trip_datetime: When the trip occurred
 
         Returns:
             The created trip with calculated score
@@ -56,33 +55,25 @@ class TripService:
         Raises:
             Exception: If user doesn't exist
         """
-        # Verify user exists
         user = await self.user_repository.get_user_by_email(email)
         if not user:
             raise ValueError(f"User with email {email} not found")
 
-        # Calculate score (1 point per 100 meters)
-        # Validate distance: negative distances are not allowed
         if distance < 0:
             raise ValueError("distance must be non-negative")
 
         score = (distance // 1000) * 77
 
-        # Create trip
         trip = Trip(
             email=email,
-            bus_line=bus_line,
-            bus_direction=bus_direction,
+            route=route,
             distance=distance,
             score=score,
-            start_date=trip_date,
-            end_date=trip_date,  # In a real app, this would be calculated
+            trip_datetime=trip_datetime,
         )
 
-        # Save trip
         saved_trip = await self.trip_repository.save_trip(trip)
 
-        # Update user score
         await self.user_repository.add_user_score(email, score)
 
         return saved_trip

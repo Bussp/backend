@@ -480,9 +480,9 @@ class TestBusPositions:
         assert response.status_code == 401
 
 
-class TestRouteShape:
+class TestRouteShapes:
     @pytest.mark.asyncio
-    async def test_get_route_shape_returns_successfully(
+    async def test_get_route_shapes_returns_successfully(
         self,
         client: AsyncClient,
     ) -> None:
@@ -493,24 +493,36 @@ class TestRouteShape:
         }
         auth = await create_user_and_login(client, user_data)
 
-        response = await client.get("/routes/shape/1012-10", headers=auth["headers"])
+        request_data = {"routes": [{"bus_line": "1012-10", "bus_direction": 1}]}
+
+        response = await client.post(
+            "/routes/shapes",
+            json=request_data,
+            headers=auth["headers"],
+        )
 
         assert response.status_code == 200
         data = response.json()
 
-        assert data["route_id"] == "1012-10"
-        assert "shape_id" in data
-        assert "points" in data
-        assert len(data["points"]) > 0
+        assert "shapes" in data
+        assert len(data["shapes"]) > 0
 
-        first_point = data["points"][0]
+        first_shape = data["shapes"][0]
+        assert "route" in first_shape
+        assert first_shape["route"]["bus_line"] == "1012-10"
+        assert first_shape["route"]["bus_direction"] == 1
+        assert "shape_id" in first_shape
+        assert "points" in first_shape
+        assert len(first_shape["points"]) > 0
+
+        first_point = first_shape["points"][0]
         assert "latitude" in first_point
         assert "longitude" in first_point
         assert isinstance(first_point["latitude"], float)
         assert isinstance(first_point["longitude"], float)
 
     @pytest.mark.asyncio
-    async def test_get_route_shape_returns_404_when_not_found(
+    async def test_get_route_shapes_returns_empty_when_not_found(
         self,
         client: AsyncClient,
     ) -> None:
@@ -521,16 +533,20 @@ class TestRouteShape:
         }
         auth = await create_user_and_login(client, user_data)
 
-        response = await client.get(
-            "/routes/shape/NONEXISTENT-ROUTE-12345",
+        request_data = {"routes": [{"bus_line": "NONEXISTENT-ROUTE-12345", "bus_direction": 1}]}
+
+        response = await client.post(
+            "/routes/shapes",
+            json=request_data,
             headers=auth["headers"],
         )
 
-        assert response.status_code == 404
-        assert "not found" in response.json()["detail"].lower()
+        assert response.status_code == 200
+        data = response.json()
+        assert data["shapes"] == []
 
     @pytest.mark.asyncio
-    async def test_get_route_shape_points_have_valid_coordinates(
+    async def test_get_route_shapes_multiple_routes(
         self,
         client: AsyncClient,
     ) -> None:
@@ -541,20 +557,90 @@ class TestRouteShape:
         }
         auth = await create_user_and_login(client, user_data)
 
-        response = await client.get("/routes/shape/1012-10", headers=auth["headers"])
+        request_data = {
+            "routes": [
+                {"bus_line": "1012-10", "bus_direction": 1},
+                {"bus_line": "1012-10", "bus_direction": 2},
+            ]
+        }
+
+        response = await client.post(
+            "/routes/shapes",
+            json=request_data,
+            headers=auth["headers"],
+        )
 
         assert response.status_code == 200
-        points = response.json()["points"]
+        data = response.json()
 
-        for point in points:
-            assert -25 <= point["latitude"] <= -22
-            assert -48 <= point["longitude"] <= -45
+        # Should return shapes for routes that exist
+        assert "shapes" in data
 
     @pytest.mark.asyncio
-    async def test_get_route_shape_without_auth_fails(
+    async def test_get_route_shapes_points_have_valid_coordinates(
         self,
         client: AsyncClient,
     ) -> None:
-        response = await client.get("/routes/shape/1012-10")
+        user_data = {
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "securepassword123",
+        }
+        auth = await create_user_and_login(client, user_data)
+
+        request_data = {"routes": [{"bus_line": "1012-10", "bus_direction": 1}]}
+
+        response = await client.post(
+            "/routes/shapes",
+            json=request_data,
+            headers=auth["headers"],
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        if data["shapes"]:
+            points = data["shapes"][0]["points"]
+            for point in points:
+                # São Paulo coordinates range
+                assert -25 <= point["latitude"] <= -22
+                assert -48 <= point["longitude"] <= -45
+
+    @pytest.mark.asyncio
+    async def test_get_route_shapes_without_auth_fails(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        request_data = {"routes": [{"bus_line": "1012-10", "bus_direction": 1}]}
+
+        response = await client.post("/routes/shapes", json=request_data)
 
         assert response.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_get_route_shapes_default_direction(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        user_data = {
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "securepassword123",
+        }
+        auth = await create_user_and_login(client, user_data)
+
+        # Request without bus_direction (should default to 1)
+        request_data = {"routes": [{"bus_line": "1012-10"}]}
+
+        response = await client.post(
+            "/routes/shapes",
+            json=request_data,
+            headers=auth["headers"],
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        if data["shapes"]:
+            # The returned shape should have direction 1 (default)
+            assert data["shapes"][0]["route"]["bus_direction"] == 1

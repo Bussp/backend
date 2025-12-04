@@ -1,8 +1,6 @@
 """History service - Business logic for user trip history."""
 
-from datetime import datetime
-
-from ..models.user_history import UserHistory
+from ..models.user_history import HistoryEntry
 from ..ports.history_repository import UserHistoryRepository
 
 
@@ -20,34 +18,26 @@ class HistoryService:
         """
         self.history_repository = history_repository
 
-    async def get_user_history(self, email: str) -> UserHistory | None:
+    async def get_user_history(self, email: str) -> list[HistoryEntry]:
         """
-        Get a user's complete trip history.
+        Get a summary of user's history as a list of HistoryEntry objects.
 
         Args:
             email: User's email
 
         Returns:
-            User's history with all trips, or None if no history found
-        """
-        return await self.history_repository.get_user_history(email)
-
-    async def get_user_history_summary(self, email: str) -> tuple[list[datetime], list[int]]:
-        """
-        Get a summary of user's history as dates and scores.
-
-        Args:
-            email: User's email
-
-        Returns:
-            Tuple of (dates, scores) lists
+            List of HistoryEntry objects containing date, score, and route_identifier
         """
         history = await self.history_repository.get_user_history(email)
 
         if not history or not history.trips:
-            return ([], [])
+            return []
 
-        dates = [trip.start_date for trip in history.trips]
-        scores = [trip.score for trip in history.trips]
-
-        return (dates, scores)
+        return [
+            HistoryEntry(
+                date=trip.trip_datetime,
+                score=trip.score,
+                route=trip.route,
+            )
+            for trip in history.trips
+        ]

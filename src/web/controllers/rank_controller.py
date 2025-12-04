@@ -32,6 +32,8 @@ def get_score_service(db: AsyncSession = Depends(get_db)) -> ScoreService:
     return ScoreService(user_repo)
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.get("/user", response_model=UserRankingResponse)
 async def get_user_ranking(
     score_service: ScoreService = Depends(get_score_service),
@@ -48,6 +50,8 @@ async def get_user_ranking(
     return UserRankingResponse(position=position)
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.get("/global", response_model=GlobalRankingResponse)
 async def get_global_ranking(
     score_service: ScoreService = Depends(get_score_service),

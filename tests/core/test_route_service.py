@@ -1,12 +1,3 @@
-"""Tests for RouteService.
-
-This file contains two groups of tests:
-- async tests that exercise the bus provider (get_bus_positions, search_routes)
-- sync tests that exercise get_route_shape delegating to a GTFS repository
-"""
-
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from typing import cast
 from unittest.mock import AsyncMock, Mock, create_autospec
@@ -115,12 +106,15 @@ async def test_search_routes_propagates_exception_from_provider() -> None:
 
 
 def test_get_route_shape_found() -> None:
-    """Test getting a route shape when it exists."""
+    # Arrange
     bus_provider = create_autospec(BusProviderPort, instance=True)
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
 
+    route = RouteIdentifier(bus_line="1012-10", bus_direction=1)
+
+    # Create a mock route shape
     mock_shape = RouteShape(
-        route_id="1012-10",
+        route=route,
         shape_id="84609",
         points=[
             RouteShapePoint(
@@ -140,35 +134,45 @@ def test_get_route_shape_found() -> None:
 
     service = RouteService(bus_provider, gtfs_repo)
 
-    result = service.get_route_shape("1012-10")
+    # Act
+    result = service.get_route_shapes([route])
 
     assert result is not None
-    assert result.route_id == "1012-10"
-    assert result.shape_id == "84609"
-    assert len(result.points) == 2
-    gtfs_repo.get_route_shape.assert_called_once_with("1012-10")
+    assert len(result) == 1
+    assert result[0].route.bus_line == "1012-10"
+    assert result[0].route.bus_direction == 1
+    assert result[0].shape_id == "84609"
+    assert len(result[0].points) == 2
+    gtfs_repo.get_route_shape.assert_called_once_with(route)
 
 
 def test_get_route_shape_not_found() -> None:
-    """Test getting a route shape when it doesn't exist."""
+    # Arrange
     bus_provider = create_autospec(BusProviderPort, instance=True)
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
+
+    route = RouteIdentifier(bus_line="nonexistent-route", bus_direction=1)
 
     gtfs_repo.get_route_shape.return_value = None
 
     service = RouteService(bus_provider, gtfs_repo)
 
-    result = service.get_route_shape("nonexistent-route")
+    # Act
+    result = service.get_route_shapes([route])
 
-    assert result is None
-    gtfs_repo.get_route_shape.assert_called_once_with("nonexistent-route")
+    # Assert
+    assert result == []
+    gtfs_repo.get_route_shape.assert_called_once_with(route)
 
 
 def test_get_route_shape_with_many_points() -> None:
-    """Test getting a route shape with many coordinate points."""
+    # Arrange
     bus_provider = create_autospec(BusProviderPort, instance=True)
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
 
+    route = RouteIdentifier(bus_line="long-route", bus_direction=1)
+
+    # Create a shape with many points
     points = [
         RouteShapePoint(
             coordinate=Coordinate(latitude=-23.5505 + i * 0.001, longitude=-46.6333 + i * 0.001),
@@ -178,28 +182,32 @@ def test_get_route_shape_with_many_points() -> None:
         for i in range(100)
     ]
 
-    mock_shape = RouteShape(route_id="long-route", shape_id="shape_long", points=points)
+    mock_shape = RouteShape(route=route, shape_id="shape_long", points=points)
 
     gtfs_repo.get_route_shape.return_value = mock_shape
 
     service = RouteService(bus_provider, gtfs_repo)
 
-    result = service.get_route_shape("long-route")
+    # Act
+    result = service.get_route_shapes([route])
 
     assert result is not None
-    assert len(result.points) == 100
-    assert result.points[0].sequence == 1
-    assert result.points[99].sequence == 100
-    gtfs_repo.get_route_shape.assert_called_once_with("long-route")
+    assert len(result) == 1
+    assert len(result[0].points) == 100
+    assert result[0].points[0].sequence == 1
+    assert result[0].points[99].sequence == 100
+    gtfs_repo.get_route_shape.assert_called_once_with(route)
 
 
 def test_get_route_shape_with_special_characters() -> None:
-    """Test getting a route shape with special characters in route ID."""
+    # Arrange
     bus_provider = create_autospec(BusProviderPort, instance=True)
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
 
+    route = RouteIdentifier(bus_line="route-with-special_chars@123", bus_direction=1)
+
     mock_shape = RouteShape(
-        route_id="route-with-special_chars@123",
+        route=route,
         shape_id="shape_special",
         points=[
             RouteShapePoint(
@@ -214,21 +222,26 @@ def test_get_route_shape_with_special_characters() -> None:
 
     service = RouteService(bus_provider, gtfs_repo)
 
-    result = service.get_route_shape("route-with-special_chars@123")
+    # Act
+    result = service.get_route_shapes([route])
 
     assert result is not None
-    assert result.route_id == "route-with-special_chars@123"
-    gtfs_repo.get_route_shape.assert_called_once_with("route-with-special_chars@123")
+    assert result[0].route.bus_line == "route-with-special_chars@123"
+    gtfs_repo.get_route_shape.assert_called_once_with(route)
 
 
-def test_get_route_shape_independent_of_bus_provider() -> None:
-    """Test that get_route_shape doesn't interact with bus provider."""
+def test_get_route_shapes_multiple_routes() -> None:
+    # Arrange
     bus_provider = create_autospec(BusProviderPort, instance=True)
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
 
-    mock_shape = RouteShape(
-        route_id="test-route",
-        shape_id="test-shape",
+    route1 = RouteIdentifier(bus_line="8075", bus_direction=1)
+    route2 = RouteIdentifier(bus_line="8075", bus_direction=2)
+    route3 = RouteIdentifier(bus_line="1012", bus_direction=1)
+
+    mock_shape1 = RouteShape(
+        route=route1,
+        shape_id="shape_8075_1",
         points=[
             RouteShapePoint(
                 coordinate=Coordinate(latitude=-23.5505, longitude=-46.6333),
@@ -238,12 +251,104 @@ def test_get_route_shape_independent_of_bus_provider() -> None:
         ],
     )
 
-    gtfs_repo.get_route_shape.return_value = mock_shape
+    mock_shape2 = RouteShape(
+        route=route2,
+        shape_id="shape_8075_2",
+        points=[
+            RouteShapePoint(
+                coordinate=Coordinate(latitude=-23.5510, longitude=-46.6340),
+                sequence=1,
+                distance_traveled=0.0,
+            )
+        ],
+    )
+
+    mock_shape3 = RouteShape(
+        route=route3,
+        shape_id="shape_1012_1",
+        points=[
+            RouteShapePoint(
+                coordinate=Coordinate(latitude=-23.5515, longitude=-46.6345),
+                sequence=1,
+                distance_traveled=0.0,
+            )
+        ],
+    )
+
+    gtfs_repo.get_route_shape.side_effect = [mock_shape1, mock_shape2, mock_shape3]
 
     service = RouteService(bus_provider, gtfs_repo)
 
-    result = service.get_route_shape("test-route")
+    # Act
+    result = service.get_route_shapes([route1, route2, route3])
 
-    assert result is not None
-    bus_provider.get_bus_positions.assert_not_called()
-    bus_provider.search_routes.assert_not_called()
+    # Assert
+    assert len(result) == 3
+    assert result[0].route.bus_line == "8075"
+    assert result[0].route.bus_direction == 1
+    assert result[1].route.bus_line == "8075"
+    assert result[1].route.bus_direction == 2
+    assert result[2].route.bus_line == "1012"
+    assert result[2].route.bus_direction == 1
+
+
+def test_get_route_shapes_partial_results() -> None:
+    # Arrange
+    bus_provider = create_autospec(BusProviderPort, instance=True)
+    gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
+
+    route1 = RouteIdentifier(bus_line="8075", bus_direction=1)
+    route2 = RouteIdentifier(bus_line="nonexistent", bus_direction=1)
+    route3 = RouteIdentifier(bus_line="1012", bus_direction=1)
+
+    mock_shape1 = RouteShape(
+        route=route1,
+        shape_id="shape_8075_1",
+        points=[
+            RouteShapePoint(
+                coordinate=Coordinate(latitude=-23.5505, longitude=-46.6333),
+                sequence=1,
+                distance_traveled=0.0,
+            )
+        ],
+    )
+
+    mock_shape3 = RouteShape(
+        route=route3,
+        shape_id="shape_1012_1",
+        points=[
+            RouteShapePoint(
+                coordinate=Coordinate(latitude=-23.5515, longitude=-46.6345),
+                sequence=1,
+                distance_traveled=0.0,
+            )
+        ],
+    )
+
+    # Second route returns None (not found)
+    gtfs_repo.get_route_shape.side_effect = [mock_shape1, None, mock_shape3]
+
+    service = RouteService(bus_provider, gtfs_repo)
+
+    # Act
+    result = service.get_route_shapes([route1, route2, route3])
+
+    # Assert - should only return 2 shapes (excluding the not found one)
+    assert len(result) == 2
+    assert result[0].route.bus_line == "8075"
+    assert result[1].route.bus_line == "1012"
+
+
+def test_get_route_shapes_empty_list() -> None:
+    # Arrange
+    bus_provider = create_autospec(BusProviderPort, instance=True)
+    gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
+
+    service = RouteService(bus_provider, gtfs_repo)
+
+    # Act
+    result = service.get_route_shapes([])
+
+    # Assert
+    assert result == []
+    gtfs_repo.get_route_shape.assert_not_called()

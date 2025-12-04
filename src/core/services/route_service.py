@@ -1,6 +1,6 @@
 """Route service - Business logic for route and bus position queries."""
 
-from ..models.bus import BusPosition, BusRoute
+from ..models.bus import BusPosition, BusRoute, RouteIdentifier
 from ..models.route_shape import RouteShape
 from ..ports.bus_provider_port import BusProviderPort
 from ..ports.gtfs_repository import GTFSRepositoryPort
@@ -62,14 +62,19 @@ class RouteService:
         """
         return await self.bus_provider.search_routes(query)
 
-    def get_route_shape(self, bus_line: str) -> RouteShape | None:
+    def get_route_shapes(self, routes: list[RouteIdentifier]) -> list[RouteShape]:
         """
-        Get the geographic shape coordinates of a route from GTFS data.
+        Get the geographic shape coordinates for multiple routes from GTFS data.
 
         Args:
-            bus_line: Bus line identifier (e.g., "1012-10").
+            routes: List of route identifiers with bus_line and direction
 
         Returns:
-            RouteShape with ordered coordinates, or None if route not found.
+            List of RouteShapes with ordered coordinates (excludes routes not found)
         """
-        return self.gtfs_repository.get_route_shape(bus_line)
+        shapes: list[RouteShape] = []
+        for route in routes:
+            shape = self.gtfs_repository.get_route_shape(route)
+            if shape is not None:
+                shapes.append(shape)
+        return shapes

@@ -108,7 +108,7 @@ class TokenResponse(BaseModel):
 class CreateTripRequest(BaseModel):
     route: RouteIdentifierSchema
     distance: int = Field(..., ge=0, description="Distance traveled in meters")
-    data: datetime = Field(..., description="Trip date and time")
+    trip_datetime: datetime = Field(..., description="Trip date and time")
 
     model_config = {"populate_by_name": True}
 
@@ -157,9 +157,23 @@ class RouteSearchResponse(BaseModel):
 class RouteShapeResponse(BaseModel):
     """Response schema for route shape coordinates."""
 
-    route_id: str = Field(..., description="Route identifier")
+    route: RouteIdentifierSchema = Field(..., description="Route identifier")
     shape_id: str = Field(..., description="GTFS shape identifier")
     points: list[CoordinateSchema] = Field(..., description="Ordered list of coordinates")
+
+
+class RouteShapesRequest(BaseModel):
+    """Request schema for querying multiple route shapes."""
+
+    routes: list[RouteIdentifierSchema] = Field(
+        ..., description="List of route identifiers to query shapes for"
+    )
+
+
+class RouteShapesResponse(BaseModel):
+    """Response schema for multiple route shapes."""
+
+    shapes: list[RouteShapeResponse] = Field(..., description="List of route shapes")
 
 
 # ===== Ranking Schemas =====
@@ -181,6 +195,7 @@ class GlobalRankingResponse(BaseModel):
 class TripHistoryEntry(BaseModel):
     date: datetime = Field(..., description="Trip date and time")
     score: int = Field(..., description="Points earned from this trip")
+    route: RouteIdentifierSchema = Field(..., description="Route identifier")
 
 
 class HistoryResponse(BaseModel):

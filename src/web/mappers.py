@@ -11,13 +11,16 @@ from ..core.models.bus import BusDirection, BusPosition, BusRoute, RouteIdentifi
 from ..core.models.coordinate import Coordinate
 from ..core.models.route_shape import RouteShape
 from ..core.models.user import User
+from ..core.models.user_history import HistoryEntry
 from .schemas import (
     BusPositionSchema,
     BusRouteRequestSchema,
     BusRouteResponseSchema,
     CoordinateSchema,
+    HistoryResponse,
     RouteIdentifierSchema,
     RouteShapeResponse,
+    TripHistoryEntry,
     UserResponse,
 )
 
@@ -218,7 +221,53 @@ def map_route_shape_to_response(shape: RouteShape) -> RouteShapeResponse:
         RouteShapeResponse for API
     """
     return RouteShapeResponse(
-        route_id=shape.route_id,
+        route=map_route_identifier_domain_to_schema(shape.route),
         shape_id=shape.shape_id,
         points=[map_coordinate_domain_to_schema(point.coordinate) for point in shape.points],
     )
+
+
+def map_route_shapes_to_response(shapes: list[RouteShape]) -> list[RouteShapeResponse]:
+    """
+    Map a list of RouteShape domain models to RouteShapeResponse list.
+
+    Args:
+        shapes: List of RouteShape domain models
+
+    Returns:
+        List of RouteShapeResponse for API
+    """
+    return [map_route_shape_to_response(shape) for shape in shapes]
+
+
+# ===== History Mappers =====
+
+
+def map_history_entry_to_schema(entry: HistoryEntry) -> TripHistoryEntry:
+    """
+    Map a HistoryEntry domain model to a TripHistoryEntry schema.
+
+    Args:
+        entry: HistoryEntry domain model
+
+    Returns:
+        TripHistoryEntry schema for API
+    """
+    return TripHistoryEntry(
+        date=entry.date,
+        score=entry.score,
+        route=map_route_identifier_domain_to_schema(entry.route),
+    )
+
+
+def map_history_entries_to_response(entries: list[HistoryEntry]) -> HistoryResponse:
+    """
+    Map a list of HistoryEntry domain models to a HistoryResponse.
+
+    Args:
+        entries: List of HistoryEntry domain models
+
+    Returns:
+        HistoryResponse for API
+    """
+    return HistoryResponse(trips=[map_history_entry_to_schema(entry) for entry in entries])

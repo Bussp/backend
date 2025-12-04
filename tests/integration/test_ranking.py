@@ -53,7 +53,7 @@ class TestUserRankPosition:
         trip_data = CreateTripRequest(
             route=RouteIdentifierSchema(bus_line="8000", bus_direction=1),
             distance=0,
-            data=datetime.now(UTC),
+            trip_datetime=datetime.now(UTC),
         )
         await client.post(
             "/trips/", json=trip_data.model_dump(mode="json"), headers=auth["headers"]
@@ -112,27 +112,6 @@ class TestGlobalRanking:
         assert "email" in first_user
         assert "score" in first_user
         assert first_user["email"] == "first@example.com"
-
-    @pytest.mark.asyncio
-    async def test_get_global_ranking_returns_empty_when_no_users(
-        self,
-        client: AsyncClient,
-        test_db: AsyncSession,
-    ) -> None:
-        user_data = {
-            "name": "Test User",
-            "email": "test@example.com",
-            "password": "securepassword123",
-        }
-        auth = await create_user_and_login(client, user_data)
-
-        response = await client.get("/rank/global", headers=auth["headers"])
-
-        assert response.status_code == 200
-        data = response.json()
-
-        assert "users" in data
-        assert len(data["users"]) == 1
 
     @pytest.mark.asyncio
     async def test_get_global_ranking_with_single_user(

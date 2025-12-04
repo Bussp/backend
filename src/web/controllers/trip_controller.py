@@ -7,6 +7,8 @@ This controller handles trip creation and scoring.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.web.mappers import map_route_identifier_schema_to_domain
+
 from ...adapters.database.connection import get_db
 from ...adapters.repositories.trip_repository_adapter import TripRepositoryAdapter
 from ...adapters.repositories.user_repository_adapter import UserRepositoryAdapter
@@ -33,6 +35,8 @@ def get_trip_service(db: AsyncSession = Depends(get_db)) -> TripService:
     return TripService(trip_repo, user_repo)
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.post("/", response_model=CreateTripResponse, status_code=status.HTTP_201_CREATED)
 async def create_trip(
     request: CreateTripRequest,
@@ -54,12 +58,12 @@ async def create_trip(
         HTTPException: If user not found or validation fails
     """
     try:
+        route = map_route_identifier_schema_to_domain(request.route)
         trip = await trip_service.create_trip(
             email=current_user.email,
-            bus_line=request.route.bus_line,
-            bus_direction=request.route.bus_direction,
+            route=route,
             distance=request.distance,
-            trip_date=request.data,
+            trip_datetime=request.trip_datetime,
         )
 
         return CreateTripResponse(score=trip.score)

@@ -67,7 +67,7 @@ async def test_create_trip_calculates_score_correctly() -> None:
         bus_line="8000",
         bus_direction=1,
         distance=1000,
-        trip_date=datetime.now()
+        trip_datetime=datetime.now()
     )
     
     # 3. Assert (Verificar) - Checar resultados
@@ -117,7 +117,7 @@ async def test_create_trip_fails_for_nonexistent_user() -> None:
             bus_line="8000",
             bus_direction=1,
             distance=1000,
-            trip_date=datetime.now()
+            trip_datetime=datetime.now()
         )
     
     # Verifica que save_trip NÃO foi chamado
@@ -152,7 +152,7 @@ async def test_multiple_trips(mocker: "MockerFixture") -> None:
         bus_line="8000",
         bus_direction=1,
         distance=500,
-        trip_date=datetime.now(),
+        trip_datetime=datetime.now(),
     )
 
     trip2 = await service.create_trip(
@@ -160,7 +160,7 @@ async def test_multiple_trips(mocker: "MockerFixture") -> None:
         bus_line="8000",
         bus_direction=2,
         distance=1500,
-        trip_date=datetime.now(),
+        trip_datetime=datetime.now(),
     )
 
     # Assert
@@ -203,7 +203,7 @@ async def test_handles_repository_save_error(mocker: "MockerFixture") -> None:
             bus_line="8000",
             bus_direction=1,
             distance=1000,
-            trip_date=datetime.now(),
+            trip_datetime=datetime.now(),
         )
 
     trip_repo.save_trip.assert_awaited_once()

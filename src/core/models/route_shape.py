@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from .bus import RouteIdentifier
 from .coordinate import Coordinate
 
 
@@ -27,11 +28,11 @@ class RouteShape:
     Complete shape of a route with ordered coordinates.
 
     Attributes:
-        route_id: Route identifier
+        route: Route identifier (bus_line and direction)
         shape_id: Shape identifier from GTFS
         points: List of points defining the route shape, ordered by sequence
     """
 
-    route_id: str
+    route: RouteIdentifier
     shape_id: str
     points: list[RouteShapePoint]

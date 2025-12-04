@@ -49,6 +49,23 @@ class Settings(BaseSettings):
         default=30, validation_alias="ACCESS_TOKEN_EXPIRE_MINUTES"
     )
 
+    # Authentication settings
+    auth_disabled: bool = Field(
+        default=False,
+        validation_alias="AUTH_DISABLED",
+        description="When True, authentication is disabled and a default user is used",
+    )
+    default_user_email: str = Field(
+        default="default@bussp.local",
+        validation_alias="DEFAULT_USER_EMAIL",
+        description="Email for the default user when auth is disabled",
+    )
+    default_user_name: str = Field(
+        default="Default User",
+        validation_alias="DEFAULT_USER_NAME",
+        description="Name for the default user when auth is disabled",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

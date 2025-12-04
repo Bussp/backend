@@ -50,14 +50,12 @@ class TripDB(Base):
     bus_direction: Mapped[int] = mapped_column(Integer, nullable=False)
     distance: Mapped[int] = mapped_column(Integer, nullable=False)
     score: Mapped[int] = mapped_column(Integer, nullable=False)
-    start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    trip_datetime: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
-    # Relationship to user
     user: Mapped["UserDB"] = relationship("UserDB", back_populates="trips")
 
     def __repr__(self) -> str:
         return (
             f"<TripDB(id={self.id}, email={self.email}, "
-            f"bus_line={self.bus_line}, score={self.score})>"
+            f"bus_line={self.bus_line}, bus_direction={self.bus_direction}, score={self.score})>"
         )
