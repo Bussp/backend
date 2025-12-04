@@ -37,7 +37,7 @@ async def test_create_trip_calculates_score_correctly() -> None:
         email="test@example.com",
         route=RouteIdentifier(bus_line="8000", bus_direction=1),
         distance=distance,
-        trip_date=datetime(2025, 10, 16, 10, 0, 0),
+        trip_datetime=datetime(2025, 10, 16, 10, 0, 0),
     )
 
     expected_score = (distance // 1000) * 77
@@ -66,7 +66,7 @@ async def test_create_trip_fails_for_nonexistent_user(mocker: "MockerFixture") -
             email="ghost@example.com",
             route=RouteIdentifier(bus_line="8000", bus_direction=1),
             distance=1000,
-            trip_date=datetime.now(),
+            trip_datetime=datetime.now(),
         )
 
     user_repo.get_user_by_email.assert_awaited_once_with("ghost@example.com")
@@ -95,14 +95,14 @@ async def test_multiple_trips(mocker: "MockerFixture") -> None:
         email="bob@example.com",
         route=RouteIdentifier(bus_line="8000", bus_direction=1),
         distance=500,
-        trip_date=datetime.now(),
+        trip_datetime=datetime.now(),
     )
 
     trip2 = await service.create_trip(
         email="bob@example.com",
         route=RouteIdentifier(bus_line="8000", bus_direction=2),
         distance=1500,
-        trip_date=datetime.now(),
+        trip_datetime=datetime.now(),
     )
 
     assert trip1.score == 0
@@ -137,7 +137,7 @@ async def test_handles_repository_save_error(mocker: "MockerFixture") -> None:
             email="charlie@example.com",
             route=RouteIdentifier(bus_line="8000", bus_direction=1),
             distance=1000,
-            trip_date=datetime.now(),
+            trip_datetime=datetime.now(),
         )
 
     trip_repo.save_trip.assert_awaited_once()

@@ -32,11 +32,11 @@ class TestUserHistory:
         ]
 
         scores: list[int] = []
-        for i, trip_date in enumerate(trip_dates):
+        for i, trip_datetime in enumerate(trip_dates):
             trip_request = CreateTripRequest(
                 route=RouteIdentifierSchema(bus_line=f"800{i}", bus_direction=1),
                 distance=(i + 1) * 1000,
-                data=trip_date,
+                trip_datetime=trip_datetime,
             )
             response = await client.post(
                 "/trips/",
@@ -110,7 +110,7 @@ class TestUserHistory:
         trip_request = CreateTripRequest(
             route=RouteIdentifierSchema(bus_line="8000", bus_direction=1),
             distance=1000,
-            data=specific_date,
+            trip_datetime=specific_date,
         )
         await client.post(
             "/trips/",
@@ -126,10 +126,10 @@ class TestUserHistory:
         assert response.status_code == 200
         history_response = HistoryResponse.model_validate(response.json())
 
-        trip_date = history_response.trips[0].date
-        assert trip_date.year == 2025
-        assert trip_date.month == 6
-        assert trip_date.day == 15
+        trip_datetime = history_response.trips[0].date
+        assert trip_datetime.year == 2025
+        assert trip_datetime.month == 6
+        assert trip_datetime.day == 15
 
     @pytest.mark.asyncio
     async def test_get_history_includes_route_identifier(
@@ -149,7 +149,7 @@ class TestUserHistory:
         trip_request = CreateTripRequest(
             route=RouteIdentifierSchema(bus_line=bus_line, bus_direction=bus_direction),
             distance=5000,
-            data=datetime(2025, 6, 15, 10, 30, 0, tzinfo=UTC),
+            trip_datetime=datetime(2025, 6, 15, 10, 30, 0, tzinfo=UTC),
         )
         await client.post(
             "/trips/",

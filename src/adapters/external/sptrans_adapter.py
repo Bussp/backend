@@ -5,18 +5,18 @@ This adapter implements the BusProviderPort interface for interacting
 with the SPTrans API.
 """
 
-from datetime import datetime
-
 import httpx
 from httpx import Response
 
 from src.config import settings
 
-from ...adapters.external.models.LineInfo import LineInfo
-from ...adapters.external.models.SPTransPosResp import SPTransPositionsResponse, Vehicle
-from ...core.models.bus import BusPosition, BusRoute, RouteIdentifier
-from ...core.models.coordinate import Coordinate
+from ...core.models.bus import BusPosition, BusRoute
 from ...core.ports.bus_provider_port import BusProviderPort
+from .sptrans_mappers import (
+    map_positions_response_to_bus_positions,
+    map_search_response_to_bus_route_list,
+)
+from .sptrans_schemas import SPTransLineSearchResponse, SPTransPositionsResponse
 
 
 class SpTransAdapter(BusProviderPort):
@@ -29,11 +29,12 @@ class SpTransAdapter(BusProviderPort):
         Initialize the SPTrans adapter.
 
         Args:
-            api_token: API authentication token (optional)
-            base_url: Base URL for the SPTrans API (optional)
+            api_token: API authentication token (optional, defaults to settings)
+            base_url: Base URL for the SPTrans API (optional, defaults to settings)
+
+        Raises:
+            ValueError: If no API token is provided or configured.
         """
-        # se o parâmetro foi passado, usa ele;
-        # senão, usa o valor do settings carregado do .env
         self.api_token = api_token or settings.sptrans_api_token
         self.base_url = base_url or settings.sptrans_base_url
 
@@ -42,15 +43,27 @@ class SpTransAdapter(BusProviderPort):
                 "SPTransAdapter: nenhum token fornecido e SPTRANS_API_TOKEN não definido no ambiente/.env."
             )
 
-        self.session_token: str | None = None
+        self._authenticated: bool = False
         self.client = httpx.AsyncClient(base_url=self.base_url, timeout=30.0)
 
-    async def authenticate(self) -> bool:
+    async def _ensure_authenticated(self) -> None:
+        """
+        Ensure the client is authenticated, authenticating if necessary.
+
+        Raises:
+            RuntimeError: If authentication fails.
+        """
+        if not self._authenticated:
+            success = await self._authenticate()
+            if not success:
+                raise RuntimeError("SPTrans authentication failed")
+
+    async def _authenticate(self) -> bool:
         """
         Authenticate with the SPTrans API.
 
         Returns:
-            True if authentication successful, False otherwise
+            True if authentication successful, False otherwise.
         """
         try:
             response: Response = await self.client.post(
@@ -59,131 +72,111 @@ class SpTransAdapter(BusProviderPort):
             )
 
             if response.status_code == 200 and response.text == "true":
-                # marca que autenticou com sucesso
-                self.session_token = "authenticated"
+                self._authenticated = True
                 return True
 
             return False
 
-        except Exception as e:
-            exc: Exception = e
-            print(f"Authentication failed: {exc}")
+        except Exception:
             return False
 
-    async def get_bus_positions(self, bus_route: BusRoute) -> list[BusPosition]:
+    def _is_unauthorized_response(self, response: Response) -> bool:
         """
-        Get real-time positions for a specific route using SPTrans data.
-
-        Pré-condição:
-            O método `authenticate()` deve ter sido chamado com sucesso antes de
-            usar este método.
+        Check if response indicates authentication is required.
 
         Args:
-            bus_route: BusRoute(route_id=cl, route=RouteIdentifier)
+            response: HTTP response to check.
 
         Returns:
-            List of BusPosition objects.
+            True if response indicates unauthorized access.
         """
-        # Checagem defensiva opcional
-        if getattr(self, "session_token", None) != "authenticated":
-            raise RuntimeError("SPTrans client not authenticated. Call `authenticate()` first.")
-
-        positions: list[BusPosition] = []
+        if response.status_code != 401:
+            return False
 
         try:
-            line_code: int = bus_route.route_id
+            data = response.json()
+            return "Authorization has been denied" in data.get("Message", "")
+        except Exception:
+            return False
 
-            response: Response = await self.client.get(
-                "/Posicao/Linha",
-                params={"codigoLinha": line_code},
-            )
-
-            if response.status_code != 200:
-                raise RuntimeError(
-                    f"SPTrans returned status {response.status_code} for line {bus_route}"
-                )
-
-            response_data: SPTransPositionsResponse = response.json()
-
-            vehicles: list[Vehicle] = response_data["vs"]
-
-            for vehicle in vehicles:
-                pos: BusPosition = BusPosition(
-                    route=bus_route.route,
-                    position=Coordinate(
-                        latitude=vehicle["py"],
-                        longitude=vehicle["px"],
-                    ),
-                    time_updated=datetime.fromisoformat(vehicle["ta"]),
-                )
-                positions.append(pos)
-
-        except Exception as e:
-            exc: Exception = e
-            print(f"Failed to get positions for bus_route {bus_route}: {exc}")
-
-        return positions
-
-    async def get_route_details(self, route: RouteIdentifier) -> list[BusRoute]:
+    async def _request_with_auth_retry(
+        self,
+        method: str,
+        url: str,
+        params: dict[str, str | int] | None = None,
+    ) -> Response:
         """
-        Resolve a logical bus line (bus_line) into all SPTrans BusRoute entries using
-        the `/Linha/Buscar` endpoint.
+        Make an HTTP request with automatic authentication retry on 401.
 
         Args:
-            route (RouteIdentifier): Logical bus line (ex: "8000")
+            method: HTTP method (GET, POST, etc.)
+            url: Request URL path.
+            params: Query parameters for the request.
 
         Returns:
-            list[BusRoute]: Todas as variantes da linha retornadas pela SPTrans.
+            HTTP response.
 
         Raises:
-            RuntimeError: Se a requisição falhar, vier vazia ou inválida.
+            RuntimeError: If authentication fails after retry.
+        """
+        await self._ensure_authenticated()
+
+        response = await self.client.request(method, url, params=params)
+
+        if self._is_unauthorized_response(response):
+            self._authenticated = False
+            await self._ensure_authenticated()
+            response = await self.client.request(method, url, params=params)
+
+            if self._is_unauthorized_response(response):
+                raise RuntimeError("SPTrans authentication failed after retry")
+
+        return response
+
+    async def get_bus_positions(
+        self,
+        route_id: int,
+    ) -> list[BusPosition]:
+        """
+        Get real-time positions for specified routes.
+
+        Args:
+            route_ids: List of provider-specific route IDs.
+
+        Returns:
+            List of BusPosition objects with route_id and coordinates.
         """
 
-        # Verifica se está autenticado
-        if getattr(self, "session_token", None) != "authenticated":
-            raise RuntimeError("SPTrans client not authenticated. Call `authenticate()` first.")
+        response = await self._request_with_auth_retry(
+            "GET",
+            "/Posicao/Linha",
+            params={"codigoLinha": route_id},
+        )
 
-        try:
-            response: Response = await self.client.get(
-                "/Linha/Buscar",
-                params={"termosBusca": route.bus_line},
-            )
+        response_data = SPTransPositionsResponse.model_validate(response.json())
+        route_positions = map_positions_response_to_bus_positions(response_data, route_id)
 
-            if response.status_code != 200:
-                raise RuntimeError(
-                    f"SPTrans returned status {response.status_code} for line search."
-                )
+        return route_positions
 
-            data: list[LineInfo] = response.json()
+    async def search_routes(self, query: str) -> list[BusRoute]:
+        """
+        Search for bus routes matching a query string.
 
-            if not isinstance(data, list) or len(data) == 0:
-                raise RuntimeError(f"No SPTrans line found for line={route.bus_line}")
+        Args:
+            query: Search term (e.g., "809" or "Vila Nova Conceição").
 
-            bus_routes: list[BusRoute] = []
+        Returns:
+            List of matching BusRoute objects.
+        """
+        response = await self._request_with_auth_retry(
+            "GET",
+            "/Linha/Buscar",
+            params={"termosBusca": query},
+        )
 
-            for item in data:
-                # Validate based on TypedDict keys
-                if "cl" not in item or "lt" not in item:
-                    continue  # Skip invalid entries
+        if response.status_code != 200:
+            raise RuntimeError(f"SPTrans returned status {response.status_code} for search.")
 
-                line_code = item["cl"]
-                line_text = item["lt"]
-                line_dir = item["sl"]
-
-                bus_routes.append(
-                    BusRoute(
-                        route_id=line_code,
-                        route=RouteIdentifier(bus_line=line_text, bus_direction=line_dir),
-                    )
-                )
-
-            if not bus_routes:
-                raise RuntimeError(
-                    f"Invalid SPTrans response for line={route.bus_line}: "
-                    "missing required fields"
-                )
-
-            return bus_routes
-
-        except Exception as e:
-            raise RuntimeError(f"Failed to resolve route details for {route}: {e}") from e
+        response_data = SPTransLineSearchResponse.model_validate(response.json())
+        bus_routes: list[BusRoute] = map_search_response_to_bus_route_list(response_data)
+        return bus_routes

@@ -35,7 +35,7 @@ class HistoryService:
 
         return [
             HistoryEntry(
-                date=trip.trip_date,
+                date=trip.trip_datetime,
                 score=trip.score,
                 route=trip.route,
             )

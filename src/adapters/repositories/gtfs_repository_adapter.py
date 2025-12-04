@@ -56,7 +56,7 @@ class GTFSRepositoryAdapter(GTFSRepositoryPort):
                 (shape_id,),
             )
 
-            points = []
+            points: list[RouteShapePoint] = []
             for row in cursor.fetchall():
                 point = RouteShapePoint(
                     coordinate=Coordinate(

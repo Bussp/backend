@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from typing import cast
 from unittest.mock import AsyncMock, Mock, create_autospec
@@ -15,53 +13,35 @@ from src.core.services.route_service import RouteService
 
 
 @pytest.mark.asyncio
-async def test_get_bus_positions_calls_auth_and_provider() -> None:
-    # Arrange
+async def test_get_bus_positions_calls_provider() -> None:
     raw_provider: Mock = Mock(spec=BusProviderPort)
-    raw_provider.authenticate = AsyncMock(return_value=True)
     raw_provider.get_bus_positions = AsyncMock()
 
     bus_provider: BusProviderPort = cast(BusProviderPort, raw_provider)
 
-    route_identifier: RouteIdentifier = RouteIdentifier(
-        bus_line="8075",
-        bus_direction=1,
-    )
-
-    bus_route: BusRoute = BusRoute(
-        route_id=1234,
-        route=route_identifier,
-    )
-
     expected_positions: list[BusPosition] = [
         BusPosition(
-            route=route_identifier,
+            route_id=1234,
             position=Coordinate(latitude=-23.0, longitude=-46.0),
             time_updated=datetime.now(UTC),
         ),
     ]
 
-    # configurando retorno tipado do mock
     raw_provider.get_bus_positions.return_value = expected_positions
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
     service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
 
-    # Act
-    result: list[BusPosition] = await service.get_bus_positions(bus_route)
+    result: list[BusPosition] = await service.get_bus_positions([1234])
 
-    # Assert
-    raw_provider.authenticate.assert_awaited_once()
-    raw_provider.get_bus_positions.assert_awaited_once_with(bus_route)
+    raw_provider.get_bus_positions.assert_awaited_once_with(1234)
     assert result == expected_positions
 
 
 @pytest.mark.asyncio
-async def test_get_route_details_calls_auth_and_provider() -> None:
-    # Arrange
+async def test_search_routes_calls_provider() -> None:
     raw_provider: Mock = Mock(spec=BusProviderPort)
-    raw_provider.authenticate = AsyncMock(return_value=True)
-    raw_provider.get_route_details = AsyncMock()
+    raw_provider.search_routes = AsyncMock()
 
     bus_provider: BusProviderPort = cast(BusProviderPort, raw_provider)
 
@@ -73,80 +53,56 @@ async def test_get_route_details_calls_auth_and_provider() -> None:
     expected_bus_route: BusRoute = BusRoute(
         route_id=1234,
         route=route_identifier,
+        is_circular=False,
+        terminal_name="Terminal A",
     )
 
     expected_routes: list[BusRoute] = [expected_bus_route]
 
-    # agora o provider também retorna lista
-    raw_provider.get_route_details.return_value = expected_routes
+    raw_provider.search_routes.return_value = expected_routes
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
     service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
 
-    # Act
-    result: list[BusRoute] = await service.get_route_details(route_identifier)
+    query = "8075"
+    result: list[BusRoute] = await service.search_routes(query)
 
-    # Assert
-    raw_provider.authenticate.assert_awaited_once()
-    raw_provider.get_route_details.assert_awaited_once_with(route_identifier)
+    raw_provider.search_routes.assert_awaited_once_with(query)
     assert result == expected_routes
 
 
 @pytest.mark.asyncio
 async def test_get_bus_positions_propagates_exception_from_provider() -> None:
-    # Arrange
+    """Test that exceptions from the provider are propagated."""
     raw_provider: Mock = Mock(spec=BusProviderPort)
-    raw_provider.authenticate = AsyncMock(return_value=True)
     raw_provider.get_bus_positions = AsyncMock(side_effect=RuntimeError("boom"))
 
     bus_provider: BusProviderPort = cast(BusProviderPort, raw_provider)
 
-    route_identifier: RouteIdentifier = RouteIdentifier(
-        bus_line="8075",
-        bus_direction=1,
-    )
-
-    bus_route: BusRoute = BusRoute(
-        route_id=1234,
-        route=route_identifier,
-    )
-
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
     service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
 
-    # Act / Assert
     with pytest.raises(RuntimeError, match="boom"):
-        await service.get_bus_positions(bus_route)
+        await service.get_bus_positions([1234])
 
-    raw_provider.authenticate.assert_awaited_once()
-    raw_provider.get_bus_positions.assert_awaited_once_with(bus_route)
+    raw_provider.get_bus_positions.assert_awaited_once_with(1234)
 
 
 @pytest.mark.asyncio
-async def test_get_route_details_propagates_exception_from_authenticate() -> None:
-    # Arrange
+async def test_search_routes_propagates_exception_from_provider() -> None:
+    """Test that exceptions from search_routes are propagated."""
     raw_provider: Mock = Mock(spec=BusProviderPort)
-    raw_provider.authenticate = AsyncMock(
-        side_effect=RuntimeError("auth failed"),
-    )
-    raw_provider.get_route_details = AsyncMock()
+    raw_provider.search_routes = AsyncMock(side_effect=RuntimeError("search failed"))
 
     bus_provider: BusProviderPort = cast(BusProviderPort, raw_provider)
-
-    route_identifier: RouteIdentifier = RouteIdentifier(
-        bus_line="8075",
-        bus_direction=1,
-    )
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
     service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
 
-    # Act / Assert
-    with pytest.raises(RuntimeError, match="auth failed"):
-        await service.get_route_details(route_identifier)
+    with pytest.raises(RuntimeError, match="search failed"):
+        await service.search_routes("8075")
 
-    raw_provider.authenticate.assert_awaited_once()
-    raw_provider.get_route_details.assert_not_awaited()
+    raw_provider.search_routes.assert_awaited_once_with("8075")
 
 
 def test_get_route_shape_found() -> None:
@@ -181,7 +137,6 @@ def test_get_route_shape_found() -> None:
     # Act
     result = service.get_route_shapes([route])
 
-    # Assert
     assert result is not None
     assert len(result) == 1
     assert result[0].route.bus_line == "1012-10"
@@ -236,7 +191,6 @@ def test_get_route_shape_with_many_points() -> None:
     # Act
     result = service.get_route_shapes([route])
 
-    # Assert
     assert result is not None
     assert len(result) == 1
     assert len(result[0].points) == 100
@@ -271,45 +225,9 @@ def test_get_route_shape_with_special_characters() -> None:
     # Act
     result = service.get_route_shapes([route])
 
-    # Assert
     assert result is not None
     assert result[0].route.bus_line == "route-with-special_chars@123"
     gtfs_repo.get_route_shape.assert_called_once_with(route)
-
-
-def test_get_route_shape_independent_of_bus_provider() -> None:
-    # Arrange
-    bus_provider = create_autospec(BusProviderPort, instance=True)
-    gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
-
-    route = RouteIdentifier(bus_line="test-route", bus_direction=1)
-
-    mock_shape = RouteShape(
-        route=route,
-        shape_id="test-shape",
-        points=[
-            RouteShapePoint(
-                coordinate=Coordinate(latitude=-23.5505, longitude=-46.6333),
-                sequence=1,
-                distance_traveled=0.0,
-            )
-        ],
-    )
-
-    gtfs_repo.get_route_shape.return_value = mock_shape
-
-    service = RouteService(bus_provider, gtfs_repo)
-
-    # Act
-    result = service.get_route_shapes([route])
-
-    # Assert
-    assert result is not None
-    assert len(result) == 1
-    # Verify bus_provider was not called at all
-    bus_provider.authenticate.assert_not_called()
-    bus_provider.get_bus_positions.assert_not_called()
-    bus_provider.get_route_details.assert_not_called()
 
 
 def test_get_route_shapes_multiple_routes() -> None:

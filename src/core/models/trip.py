@@ -16,11 +16,11 @@ class Trip:
         route: Route identifier containing bus_line and bus_direction
         distance: Distance traveled in meters
         score: Points earned from this trip
-        trip_date: When the trip occurred
+        trip_datetime: When the trip occurred
     """
 
     email: str
     route: RouteIdentifier
     distance: int
     score: int
-    trip_date: datetime
+    trip_datetime: datetime

@@ -27,7 +27,7 @@ async def test_create_trip_no_user() -> None:
             email="missing@example.com",
             route=RouteIdentifier(bus_line="8000", bus_direction=1),
             distance=1000,
-            trip_date=datetime.now(),
+            trip_datetime=datetime.now(),
         )
 
     user_repo.get_user_by_email.assert_awaited_once_with("missing@example.com")
@@ -54,7 +54,7 @@ async def test_create_trip_single_user() -> None:
         email="user@example.com",
         route=RouteIdentifier(bus_line="9000", bus_direction=2),
         distance=distance,
-        trip_date=datetime(2025, 11, 15, 12, 0, 0),
+        trip_datetime=datetime(2025, 11, 15, 12, 0, 0),
     )
 
     assert isinstance(trip, Trip)
@@ -83,7 +83,7 @@ async def test_create_trip_zero_distance() -> None:
         email="zero@example.com",
         route=RouteIdentifier(bus_line="0000", bus_direction=1),
         distance=0,
-        trip_date=datetime(2025, 11, 15, 12, 0, 0),
+        trip_datetime=datetime(2025, 11, 15, 12, 0, 0),
     )
 
     assert isinstance(trip, Trip)
@@ -109,7 +109,7 @@ async def test_create_trip_negative_distance() -> None:
             email="neg@example.com",
             route=RouteIdentifier(bus_line="-100", bus_direction=1),
             distance=-150,
-            trip_date=datetime(2025, 11, 15, 12, 0, 0),
+            trip_datetime=datetime(2025, 11, 15, 12, 0, 0),
         )
 
     trip_repo.save_trip.assert_not_awaited()
@@ -134,7 +134,7 @@ async def test_create_trip_very_large_distance() -> None:
         email="big@example.com",
         route=RouteIdentifier(bus_line="BIG", bus_direction=2),
         distance=big_distance,
-        trip_date=datetime(2025, 11, 15, 12, 0, 0),
+        trip_datetime=datetime(2025, 11, 15, 12, 0, 0),
     )
 
     expected_score = (big_distance // 1000) * 77
@@ -167,7 +167,7 @@ async def test_create_trip_stores_route_identifier() -> None:
         email="test@example.com",
         route=RouteIdentifier(bus_line="8000", bus_direction=1),
         distance=5000,
-        trip_date=datetime(2025, 11, 15, 12, 0, 0),
+        trip_datetime=datetime(2025, 11, 15, 12, 0, 0),
     )
 
     assert saved_trip is not None

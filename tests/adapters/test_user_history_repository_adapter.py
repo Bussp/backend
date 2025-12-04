@@ -20,7 +20,7 @@ class _DummyTrip:
         self.bus_direction = bus_direction
         self.distance = 100
         self.score = score
-        self.trip_date = datetime(2025, 1, 1)
+        self.trip_datetime = datetime(2025, 1, 1)
 
 
 class _DummyUser:

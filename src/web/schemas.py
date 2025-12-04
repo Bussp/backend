@@ -36,18 +36,35 @@ class CoordinateSchema(BaseModel):
 class BusPositionSchema(BaseModel):
     """Schema for bus position information."""
 
-    route: RouteIdentifierSchema
+    route_id: int = Field(..., description="Provider-specific route identifier")
     position: CoordinateSchema
     time_updated: datetime = Field(..., description="Last update timestamp")
 
     model_config = {"populate_by_name": True}
 
 
-class BusRouteSchema(BaseModel):
-    """Schema for a resolved bus route (provider-specific ID + identifier)."""
+class BusRouteRequestSchema(BaseModel):
+    """Schema for bus route in requests (input from user).
+
+    Only requires route_id for querying positions.
+    """
+
+    route_id: int = Field(..., description="Provider-specific route identifier")
+
+
+class BusRouteResponseSchema(BaseModel):
+    """Schema for bus route in responses (output to user).
+
+    Includes full route information with metadata.
+    """
 
     route_id: int = Field(..., description="Provider-specific route identifier")
     route: RouteIdentifierSchema
+    is_circular: bool = Field(..., description="Whether the route is circular")
+    terminal_name: str = Field(
+        ...,
+        description="Terminal name (primary if direction=1, secondary if direction=2)",
+    )
 
 
 # ===== User Management Schemas =====
@@ -91,7 +108,7 @@ class TokenResponse(BaseModel):
 class CreateTripRequest(BaseModel):
     route: RouteIdentifierSchema
     distance: int = Field(..., ge=0, description="Distance traveled in meters")
-    data: datetime = Field(..., description="Trip date and time")
+    trip_datetime: datetime = Field(..., description="Trip date and time")
 
     model_config = {"populate_by_name": True}
 
@@ -108,8 +125,8 @@ class CreateTripResponse(BaseModel):
 class BusPositionsRequest(BaseModel):
     """Request schema for querying bus positions."""
 
-    routes: list[BusRouteSchema] = Field(
-        ..., description="List of resolved routes (with route_id) to query positions"
+    routes: list[BusRouteRequestSchema] = Field(
+        ..., description="List of routes to query positions for"
     )
 
 
@@ -119,19 +136,21 @@ class BusPositionsResponse(BaseModel):
     buses: list[BusPositionSchema] = Field(..., description="List of bus positions")
 
 
-class BusRoutesDetailsRequest(BaseModel):
-    """Request schema for resolving route details."""
+class RouteSearchRequest(BaseModel):
+    """Request schema for searching routes."""
 
-    routes: list[RouteIdentifierSchema] = Field(
-        ..., description="List of routes (line + direction) to resolve"
+    query: str = Field(
+        ...,
+        min_length=1,
+        description="Search term (e.g., '809' or 'Vila Nova Conceição')",
     )
 
 
-class BusRoutesDetailsResponse(BaseModel):
-    """Response schema for route details."""
+class RouteSearchResponse(BaseModel):
+    """Response schema for route search results."""
 
-    routes: list[BusRouteSchema] = Field(
-        ..., description="List of resolved routes with provider IDs"
+    routes: list[BusRouteResponseSchema] = Field(
+        ..., description="List of matching routes with provider IDs"
     )
 
 

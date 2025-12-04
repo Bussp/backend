@@ -35,7 +35,7 @@ class TripService:
         email: str,
         route: RouteIdentifier,
         distance: int,
-        trip_date: datetime,
+        trip_datetime: datetime,
     ) -> Trip:
         """
         Create a new trip and update user score.
@@ -47,7 +47,7 @@ class TripService:
             email: User's email
             route: Route identifier containing bus_line and bus_direction
             distance: Distance traveled in meters
-            trip_date: When the trip occurred
+            trip_datetime: When the trip occurred
 
         Returns:
             The created trip with calculated score
@@ -69,7 +69,7 @@ class TripService:
             route=route,
             distance=distance,
             score=score,
-            trip_date=trip_date,
+            trip_datetime=trip_datetime,
         )
 
         saved_trip = await self.trip_repository.save_trip(trip)

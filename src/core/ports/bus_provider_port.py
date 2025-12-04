@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from ..models.bus import BusPosition, BusRoute, RouteIdentifier
+from ..models.bus import BusPosition, BusRoute
 
 
 class BusProviderPort(ABC):
@@ -11,46 +11,40 @@ class BusProviderPort(ABC):
 
     This port defines the contract for interacting with external
     bus tracking APIs (e.g., SPTrans, NextBus, etc.).
+    Authentication is managed internally by implementations.
     """
 
     @abstractmethod
-    async def authenticate(self) -> bool:
+    async def get_bus_positions(
+        self,
+        route_id: int,
+    ) -> list[BusPosition]:
         """
-        Authenticate with the bus tracking API.
+        Get real-time positions for specified routes.
+
+        Args:
+            route_ids: List of provider-specific route IDs.
 
         Returns:
-            True if authentication successful, False otherwise
+            List of current bus positions with route_id.
+
+        Raises:
+            RuntimeError: If API call fails or authentication fails.
         """
         pass
 
     @abstractmethod
-    async def get_bus_positions(self, bus_route: BusRoute) -> list[BusPosition]:
+    async def search_routes(self, query: str) -> list[BusRoute]:
         """
-        Get real-time positions for specified bus routes.
+        Search for bus routes matching a query string.
 
         Args:
-            routes: List of route identifiers to query
+            query: Search term (e.g., route number or destination name).
 
         Returns:
-            List of current bus positions
+            List of matching bus routes.
 
         Raises:
-            Exception: If API call fails or authentication required
-        """
-        pass
-
-    @abstractmethod
-    async def get_route_details(self, route: RouteIdentifier) -> list[BusRoute]:
-        """
-        Get detailed information about a specific route.
-
-        Args:
-            route: Route identifier to query
-
-        Returns:
-            Bus route details
-
-        Raises:
-            Exception: If route not found or API call fails
+            RuntimeError: If API call fails or authentication fails.
         """
         pass

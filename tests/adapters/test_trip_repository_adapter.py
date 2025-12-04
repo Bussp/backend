@@ -35,7 +35,7 @@ def _make_domain_trip() -> object:
         route=RouteIdentifier(bus_line="8000", bus_direction=1),
         distance=1000,
         score=10,
-        trip_date=datetime(2025, 1, 1, 8, 0, 0),
+        trip_datetime=datetime(2025, 1, 1, 8, 0, 0),
     )
 
 
@@ -51,7 +51,7 @@ async def test_save_trip_unit(monkeypatch) -> None:
         bus_direction=1,
         distance=1000,
         score=10,
-        trip_date=datetime(2025, 1, 1, 8, 0, 0),
+        trip_datetime=datetime(2025, 1, 1, 8, 0, 0),
     )
 
     monkeypatch.setattr(adapter_mod, "map_trip_domain_to_db", lambda t: dummy_db_obj)
@@ -67,7 +67,7 @@ async def test_save_trip_unit(monkeypatch) -> None:
             ),
             distance=db.distance,
             score=db.score,
-            trip_date=db.trip_date,
+            trip_datetime=db.trip_datetime,
         ),
     )
 

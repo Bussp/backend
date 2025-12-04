@@ -14,13 +14,13 @@ from src.core.services.history_service import HistoryService
 async def test_get_user_history_timezone_aware() -> None:
     history_repo = create_autospec(UserHistoryRepository, instance=True)
 
-    trip_date = datetime(2025, 10, 16, 10, 0, 0, tzinfo=UTC)
+    trip_datetime = datetime(2025, 10, 16, 10, 0, 0, tzinfo=UTC)
     trip = Trip(
         email="tz@example.com",
         route=RouteIdentifier(bus_line="8000", bus_direction=1),
         distance=1000,
         score=10,
-        trip_date=trip_date,
+        trip_datetime=trip_datetime,
     )
 
     user_history = UserHistory(email="tz@example.com", trips=[trip])
@@ -32,7 +32,7 @@ async def test_get_user_history_timezone_aware() -> None:
     result = await service.get_user_history("tz@example.com")
 
     assert len(result) == 1
-    assert result[0].date == trip_date
+    assert result[0].date == trip_datetime
     assert result[0].score == 10
     assert result[0].route.bus_line == "8000"
     assert result[0].route.bus_direction == 1
@@ -56,13 +56,13 @@ async def test_get_user_history_no_data() -> None:
 async def test_get_user_history_single_entry() -> None:
     history_repo = create_autospec(UserHistoryRepository, instance=True)
 
-    trip_date = datetime(2025, 10, 16, 10, 0, 0)
+    trip_datetime = datetime(2025, 10, 16, 10, 0, 0)
     trip = Trip(
         email="test@example.com",
         route=RouteIdentifier(bus_line="8000", bus_direction=1),
         distance=1000,
         score=10,
-        trip_date=trip_date,
+        trip_datetime=trip_datetime,
     )
 
     user_history = UserHistory(email="test@example.com", trips=[trip])
@@ -74,7 +74,7 @@ async def test_get_user_history_single_entry() -> None:
     result = await service.get_user_history("test@example.com")
 
     assert len(result) == 1
-    assert result[0].date == trip_date
+    assert result[0].date == trip_datetime
     assert result[0].score == 10
     assert result[0].route.bus_line == "8000"
     assert result[0].route.bus_direction == 1
@@ -95,21 +95,21 @@ async def test_get_user_history_multiple_entries() -> None:
             route=RouteIdentifier(bus_line="8000", bus_direction=1),
             distance=1000,
             score=10,
-            trip_date=trip1_date,
+            trip_datetime=trip1_date,
         ),
         Trip(
             email="multi@example.com",
             route=RouteIdentifier(bus_line="9000", bus_direction=2),
             distance=2000,
             score=20,
-            trip_date=trip2_date,
+            trip_datetime=trip2_date,
         ),
         Trip(
             email="multi@example.com",
             route=RouteIdentifier(bus_line="7000", bus_direction=1),
             distance=3000,
             score=30,
-            trip_date=trip3_date,
+            trip_datetime=trip3_date,
         ),
     ]
 

@@ -159,7 +159,7 @@ class TripService:
         email: str,
         bus_line: str,
         distance: int,
-        trip_date: datetime,
+        trip_datetime: datetime,
     ) -> Trip:
         # 1. Validar usuário existe
         user = await self._user_repo.get_user(email)
@@ -174,7 +174,7 @@ class TripService:
             email=email,
             bus_line=bus_line,
             score=score,
-            trip_date=trip_date,
+            trip_datetime=trip_datetime,
         )
         
         # 4. Salvar viagem
@@ -222,7 +222,7 @@ async def create_trip(
         email=request.email,
         bus_line=request.bus_line,
         distance=request.distance,
-        trip_date=request.trip_date,
+        trip_datetime=request.trip_datetime,
     )
     
     # 2. Mapear domínio → API schema
@@ -249,14 +249,14 @@ class CreateTripRequest(BaseModel):
     email: EmailStr
     bus_line: str
     distance: int
-    trip_date: datetime
+    trip_datetime: datetime
 
 class TripResponse(BaseModel):
     id: int
     email: str
     bus_line: str
     score: int
-    trip_date: datetime
+    trip_datetime: datetime
 ```
 
 #### `mappers.py` - Conversão de Dados
@@ -270,7 +270,7 @@ def trip_response_from_domain(trip: Trip) -> TripResponse:
         email=trip.email,
         bus_line=trip.bus_line,
         score=trip.score,
-        trip_date=trip.trip_date,
+        trip_datetime=trip.trip_datetime,
     )
 ```
 

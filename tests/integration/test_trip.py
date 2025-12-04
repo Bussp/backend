@@ -31,7 +31,7 @@ class TestCreateTrip:
                 bus_direction=1,
             ),
             distance=5000,
-            data=datetime.now(UTC),
+            trip_datetime=datetime.now(UTC),
         )
 
         response = await client.post(
@@ -73,7 +73,7 @@ class TestCreateTrip:
                 bus_direction=1,
             ),
             distance=1000,
-            data=datetime.now(UTC),
+            trip_datetime=datetime.now(UTC),
         )
         second_trip_data = CreateTripRequest(
             route=RouteIdentifierSchema(
@@ -81,7 +81,7 @@ class TestCreateTrip:
                 bus_direction=1,
             ),
             distance=2000,
-            data=datetime.now(UTC),
+            trip_datetime=datetime.now(UTC),
         )
 
         resp1 = await client.post(
@@ -117,7 +117,7 @@ class TestCreateTrip:
                 bus_direction=1,
             ),
             distance=1000,
-            data=datetime.now(UTC),
+            trip_datetime=datetime.now(UTC),
         )
 
         response = await client.post("/trips/", json=trip_data.model_dump(mode="json"))
@@ -142,7 +142,7 @@ class TestCreateTrip:
                 bus_direction=2,
             ),
             distance=0,
-            data=datetime.now(UTC),
+            trip_datetime=datetime.now(UTC),
         )
 
         response = await client.post(
@@ -173,7 +173,7 @@ class TestCreateTrip:
                 "bus_direction": 1,
             },
             "distance": -1000,
-            "data": datetime.now(UTC).isoformat(),
+            "trip_datetime": datetime.now(UTC).isoformat(),
         }
 
         response = await client.post(
@@ -207,7 +207,7 @@ class TestCreateTrip:
                 "bus_direction": 3,
             },
             "distance": 1000,
-            "data": datetime.now(UTC).isoformat(),
+            "trip_datetime": datetime.now(UTC).isoformat(),
         }
 
         response = await client.post(
@@ -241,7 +241,7 @@ class TestCreateTrip:
                 bus_direction=2,
             ),
             distance=5000,
-            data=datetime.now(UTC),
+            trip_datetime=datetime.now(UTC),
         )
 
         response = await client.post(

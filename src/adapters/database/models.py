@@ -50,7 +50,7 @@ class TripDB(Base):
     bus_direction: Mapped[int] = mapped_column(Integer, nullable=False)
     distance: Mapped[int] = mapped_column(Integer, nullable=False)
     score: Mapped[int] = mapped_column(Integer, nullable=False)
-    trip_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    trip_datetime: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     user: Mapped["UserDB"] = relationship("UserDB", back_populates="trips")
 
