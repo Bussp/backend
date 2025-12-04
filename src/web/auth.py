@@ -11,9 +11,7 @@ from ..core.models.user import User
 from ..core.ports.password_hasher import PasswordHasherPort
 from ..core.services.user_service import UserService
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/users/login", auto_error=not settings.auth_disabled
-)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login", auto_error=not settings.auth_disabled)
 
 
 def get_password_hasher() -> PasswordHasherPort:
