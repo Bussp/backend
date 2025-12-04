@@ -14,7 +14,9 @@ class RouteService:
     real-time bus information and GTFS data for route shapes.
     """
 
-    def __init__(self, bus_provider: BusProviderPort, gtfs_repository: GTFSRepositoryPort):
+    def __init__(
+        self, bus_provider: BusProviderPort, gtfs_repository: GTFSRepositoryPort
+    ):
         """
         Initialize the route service.
 
@@ -60,14 +62,31 @@ class RouteService:
         await self.bus_provider.authenticate()
         return await self.bus_provider.get_route_details(route)
 
-    def get_route_shape(self, route_id: str) -> RouteShape | None:
+    def get_route_shape(self, route: RouteIdentifier) -> RouteShape | None:
         """
         Get the geographic shape coordinates of a route from GTFS data.
 
         Args:
-            route_id: Route identifier (e.g., "1012-10")
+            route: Route identifier with bus_line and direction
 
         Returns:
             RouteShape with ordered coordinates, or None if route not found
         """
-        return self.gtfs_repository.get_route_shape(route_id)
+        return self.gtfs_repository.get_route_shape(route)
+
+    def get_route_shapes(self, routes: list[RouteIdentifier]) -> list[RouteShape]:
+        """
+        Get the geographic shape coordinates for multiple routes from GTFS data.
+
+        Args:
+            routes: List of route identifiers with bus_line and direction
+
+        Returns:
+            List of RouteShapes with ordered coordinates (excludes routes not found)
+        """
+        shapes: list[RouteShape] = []
+        for route in routes:
+            shape = self.gtfs_repository.get_route_shape(route)
+            if shape is not None:
+                shapes.append(shape)
+        return shapes

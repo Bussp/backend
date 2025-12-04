@@ -7,13 +7,14 @@ from the SQLite GTFS database.
 from unittest.mock import MagicMock, patch
 
 from src.adapters.repositories.gtfs_repository_adapter import GTFSRepositoryAdapter
+from src.core.models.bus import RouteIdentifier
 from src.core.models.route_shape import RouteShape
 
 
 def test_get_route_shape_found() -> None:
-    """Test getting a route shape when the route exists in the database."""
     # Arrange
     adapter = GTFSRepositoryAdapter()
+    route = RouteIdentifier(bus_line="test_route_1", bus_direction=1)
 
     # Mock the database connection and cursors
     mock_conn = MagicMock()
@@ -49,16 +50,19 @@ def test_get_route_shape_found() -> None:
     mock_conn.execute.side_effect = [mock_cursor1, mock_cursor2]
 
     # Patch get_gtfs_db to return our mock connection
-    with patch("src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db") as mock_get_db:
+    with patch(
+        "src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db"
+    ) as mock_get_db:
         mock_get_db.return_value.__enter__.return_value = mock_conn
 
         # Act
-        result = adapter.get_route_shape("test_route_1")
+        result = adapter.get_route_shape(route)
 
     # Assert
     assert result is not None
     assert isinstance(result, RouteShape)
-    assert result.route_id == "test_route_1"
+    assert result.route.bus_line == "test_route_1"
+    assert result.route.bus_direction == 1
     assert result.shape_id == "test_shape_123"
     assert len(result.points) == 3
 
@@ -76,9 +80,9 @@ def test_get_route_shape_found() -> None:
 
 
 def test_get_route_shape_route_not_found() -> None:
-    """Test getting a route shape when the route doesn't exist."""
     # Arrange
     adapter = GTFSRepositoryAdapter()
+    route = RouteIdentifier(bus_line="nonexistent_route", bus_direction=1)
 
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
@@ -87,20 +91,22 @@ def test_get_route_shape_route_not_found() -> None:
     mock_cursor.fetchone.return_value = None
     mock_conn.execute.return_value = mock_cursor
 
-    with patch("src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db") as mock_get_db:
+    with patch(
+        "src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db"
+    ) as mock_get_db:
         mock_get_db.return_value.__enter__.return_value = mock_conn
 
         # Act
-        result = adapter.get_route_shape("nonexistent_route")
+        result = adapter.get_route_shape(route)
 
     # Assert
     assert result is None
 
 
 def test_get_route_shape_no_shape_points() -> None:
-    """Test when route exists but has no shape points."""
     # Arrange
     adapter = GTFSRepositoryAdapter()
+    route = RouteIdentifier(bus_line="route_without_points", bus_direction=1)
 
     mock_conn = MagicMock()
     mock_cursor1 = MagicMock()
@@ -114,11 +120,13 @@ def test_get_route_shape_no_shape_points() -> None:
 
     mock_conn.execute.side_effect = [mock_cursor1, mock_cursor2]
 
-    with patch("src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db") as mock_get_db:
+    with patch(
+        "src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db"
+    ) as mock_get_db:
         mock_get_db.return_value.__enter__.return_value = mock_conn
 
         # Act
-        result = adapter.get_route_shape("route_without_points")
+        result = adapter.get_route_shape(route)
 
     # Assert
     assert result is None
@@ -128,6 +136,7 @@ def test_get_route_shape_single_point() -> None:
     """Test getting a route shape with only one point."""
     # Arrange
     adapter = GTFSRepositoryAdapter()
+    route = RouteIdentifier(bus_line="single_point_route", bus_direction=1)
 
     mock_conn = MagicMock()
     mock_cursor1 = MagicMock()
@@ -146,11 +155,13 @@ def test_get_route_shape_single_point() -> None:
 
     mock_conn.execute.side_effect = [mock_cursor1, mock_cursor2]
 
-    with patch("src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db") as mock_get_db:
+    with patch(
+        "src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db"
+    ) as mock_get_db:
         mock_get_db.return_value.__enter__.return_value = mock_conn
 
         # Act
-        result = adapter.get_route_shape("single_point_route")
+        result = adapter.get_route_shape(route)
 
     # Assert
     assert result is not None
@@ -163,6 +174,7 @@ def test_get_route_shape_null_distance_traveled() -> None:
     """Test getting a route shape with NULL distance_traveled values."""
     # Arrange
     adapter = GTFSRepositoryAdapter()
+    route = RouteIdentifier(bus_line="route_no_distance", bus_direction=1)
 
     mock_conn = MagicMock()
     mock_cursor1 = MagicMock()
@@ -187,11 +199,13 @@ def test_get_route_shape_null_distance_traveled() -> None:
 
     mock_conn.execute.side_effect = [mock_cursor1, mock_cursor2]
 
-    with patch("src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db") as mock_get_db:
+    with patch(
+        "src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db"
+    ) as mock_get_db:
         mock_get_db.return_value.__enter__.return_value = mock_conn
 
         # Act
-        result = adapter.get_route_shape("route_no_distance")
+        result = adapter.get_route_shape(route)
 
     # Assert
     assert result is not None
