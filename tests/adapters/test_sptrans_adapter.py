@@ -5,7 +5,6 @@ import pytest
 from src.adapters.external.sptrans_adapter import SpTransAdapter
 from src.core.models.bus import BusPosition, BusRoute
 
-
 skip_if_no_token = pytest.mark.skipif(
     not os.getenv("SPTRANS_API_TOKEN"),
     reason="SPTRANS_API_TOKEN not set - skipping integration test",
@@ -22,9 +21,7 @@ async def test_automatic_authentication() -> None:
 
     routes: list[BusRoute] = await adapter.search_routes("8075")
 
-    assert (
-        "apiCredentials" in adapter.client.cookies
-    ), "Cookie de credenciais não foi criado."
+    assert "apiCredentials" in adapter.client.cookies, "Cookie de credenciais não foi criado."
     assert len(routes) > 0
 
 
@@ -75,16 +72,13 @@ async def test_get_bus_positions() -> None:
     chosen_route: BusRoute = bus_routes[0]
     assert chosen_route.route_id > 0
 
-    positions: list[BusPosition] = await adapter.get_bus_positions([chosen_route])
+    positions: list[BusPosition] = await adapter.get_bus_positions(chosen_route.route_id)
 
     assert positions is not None
     assert isinstance(positions, list)
 
     if positions:
         pos: BusPosition = positions[0]
-
-        assert "8075" in pos.route.bus_line
-        assert pos.route.bus_direction in (1, 2)
 
         assert isinstance(pos.position.latitude, float | int)
         assert isinstance(pos.position.longitude, float | int)

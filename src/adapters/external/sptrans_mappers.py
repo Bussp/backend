@@ -5,9 +5,17 @@ These mappers handle the transformation between external API DTOs
 and internal domain objects, keeping the adapter layer clean.
 """
 
-from ...core.models.bus import BusPosition, BusRoute, RouteIdentifier
+from typing import cast
+
+from ...core.models.bus import BusDirection, BusPosition, BusRoute, RouteIdentifier
 from ...core.models.coordinate import Coordinate
-from .sptrans_schemas import SPTransLineInfo, SPTransLineSearchResponse, SPTransPositionsResponse, SPTransVehicle
+from .sptrans_schemas import (
+    SPTransLineInfo,
+    SPTransLineSearchResponse,
+    SPTransPositionsResponse,
+    SPTransVehicle,
+)
+
 
 def map_search_response_to_bus_route_list(
     data: SPTransLineSearchResponse,
@@ -22,9 +30,10 @@ def map_search_response_to_bus_route_list(
         List of BusRoute domain objects.
     """
     bus_route_list: list[BusRoute] = []
-    for item in data.results:
+    for item in data.root:
         bus_route_list.append(map_line_info_to_bus_route(item))
     return bus_route_list
+
 
 def map_line_info_to_bus_route(line_info: SPTransLineInfo) -> BusRoute:
     """
@@ -36,10 +45,17 @@ def map_line_info_to_bus_route(line_info: SPTransLineInfo) -> BusRoute:
     Returns:
         Domain BusRoute with route_id and identifier.
     """
-    return BusRoute(
-        route_id=line_info.cl,
-        route=map_line_info_to_route_identifier(line_info),
+    # Terminal name: primary if direction=1 (ida), secondary if direction=2 (volta)
+    terminal_name = (
+        line_info.primary_terminal if line_info.direction == 1 else line_info.secondary_terminal
     )
+    return BusRoute(
+        route_id=line_info.route_id,
+        route=map_line_info_to_route_identifier(line_info),
+        is_circular=line_info.is_circular,
+        terminal_name=terminal_name,
+    )
+
 
 def map_line_info_to_route_identifier(line_info: SPTransLineInfo) -> RouteIdentifier:
     """
@@ -49,56 +65,57 @@ def map_line_info_to_route_identifier(line_info: SPTransLineInfo) -> RouteIdenti
         line_info: SPTrans line information.
 
     Returns:
-        Domain RouteIdentifier with formatted bus_line (lt-tl format).
+        Domain RouteIdentifier with formatted bus_line (line_number-line_sufix format).
     """
-    bus_line = f"{line_info.lt}-{line_info.tl}"
+    bus_line = f"{line_info.line_number}-{line_info.line_sufix}"
     return RouteIdentifier(
         bus_line=bus_line,
-        bus_direction=line_info.sl,
+        bus_direction=cast(BusDirection, line_info.direction),
     )
 
 
 def map_positions_response_to_bus_positions(
     data: SPTransPositionsResponse,
-    route: RouteIdentifier,
+    route_id: int,
 ) -> list[BusPosition]:
     """
     Convert API positions response to list of BusPosition domain objects.
 
     Args:
         data: SPTransPositionsResponse object.
-        route: RouteIdentifier for all vehicles in this response.
+        route_id: Provider-specific route identifier.
 
     Returns:
         List of domain BusPosition objects.
     """
     positions: list[BusPosition] = []
 
-    for vehicle in data.vs:
-        position = map_vehicle_to_bus_position(vehicle, route)
+    for vehicle in data.vehicles:
+        position = map_vehicle_to_bus_position(vehicle, route_id)
         positions.append(position)
 
     return positions
 
+
 def map_vehicle_to_bus_position(
     vehicle: SPTransVehicle,
-    route: RouteIdentifier,
+    route_id: int,
 ) -> BusPosition:
     """
     Convert SPTrans vehicle to domain BusPosition.
 
     Args:
         vehicle: SPTransVehicle position data.
-        route: RouteIdentifier for this vehicle's route.
+        route_id: Provider-specific route identifier.
 
     Returns:
-        Domain BusPosition with coordinates and route info.
+        Domain BusPosition with coordinates and route_id.
     """
     return BusPosition(
-        route=route,
+        route_id=route_id,
         position=Coordinate(
-            latitude=vehicle.py,
-            longitude=vehicle.px,
+            latitude=vehicle.latitude,
+            longitude=vehicle.longitude,
         ),
-        time_updated=vehicle.ta,
+        time_updated=vehicle.time_updated,
     )

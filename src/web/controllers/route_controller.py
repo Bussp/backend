@@ -16,7 +16,7 @@ from ..auth import get_current_user
 from ..mappers import (
     map_bus_position_list_to_schema,
     map_bus_route_domain_list_to_schema,
-    map_bus_route_schema_list_to_domain,
+    map_bus_route_request_list,
     map_route_shape_to_response,
 )
 from ..schemas import (
@@ -87,19 +87,21 @@ async def get_bus_positions(
     Get real-time bus positions for specified routes.
 
     Args:
-        request: Request containing list of routes.
+        request: Request containing list of route_ids.
         route_service: Injected route service.
         current_user: Authenticated user.
 
     Returns:
-        List of bus positions with route identifiers.
+        List of bus positions with route_id.
 
     Raises:
         HTTPException: If fetching positions fails.
     """
     try:
-        bus_routes = map_bus_route_schema_list_to_domain(request.routes)
-        positions: list[BusPosition] = await route_service.get_bus_positions(bus_routes)
+        # Extract route_ids from request
+        route_ids = map_bus_route_request_list(request.routes)
+
+        positions: list[BusPosition] = await route_service.get_bus_positions(route_ids)
         position_schemas = map_bus_position_list_to_schema(positions)
         return BusPositionsResponse(buses=position_schemas)
 

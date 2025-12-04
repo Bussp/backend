@@ -15,15 +15,18 @@ class BusProviderPort(ABC):
     """
 
     @abstractmethod
-    async def get_bus_positions(self, routes: list[BusRoute]) -> list[BusPosition]:
+    async def get_bus_positions(
+        self,
+        route_id: int,
+    ) -> list[BusPosition]:
         """
         Get real-time positions for specified routes.
 
         Args:
-            routes: List of BusRoute objects containing route info.
+            route_ids: List of provider-specific route IDs.
 
         Returns:
-            List of current bus positions with route identifiers.
+            List of current bus positions with route_id.
 
         Raises:
             RuntimeError: If API call fails or authentication fails.

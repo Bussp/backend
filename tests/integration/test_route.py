@@ -8,8 +8,7 @@ from src.core.models.bus import BusPosition, BusRoute, RouteIdentifier
 from src.core.models.coordinate import Coordinate
 from src.web.schemas import (
     BusPositionsRequest,
-    BusRouteSchema,
-    RouteIdentifierSchema,
+    BusRouteRequestSchema,
 )
 
 from .conftest import create_user_and_login
@@ -31,7 +30,12 @@ class TestRouteSearch:
         mock_bus_routes = [
             BusRoute(
                 route_id=12345,
-                route=RouteIdentifier(bus_line="8000", bus_direction=1),
+                route=RouteIdentifier(
+                    bus_line="8000",
+                    bus_direction=1,
+                ),
+                is_circular=False,
+                terminal_name="Terminal A",
             )
         ]
 
@@ -74,11 +78,21 @@ class TestRouteSearch:
         mock_bus_routes = [
             BusRoute(
                 route_id=12345,
-                route=RouteIdentifier(bus_line="8000", bus_direction=1),
+                route=RouteIdentifier(
+                    bus_line="8000",
+                    bus_direction=1,
+                ),
+                is_circular=False,
+                terminal_name="Terminal A",
             ),
             BusRoute(
                 route_id=12346,
-                route=RouteIdentifier(bus_line="8000", bus_direction=2),
+                route=RouteIdentifier(
+                    bus_line="8000",
+                    bus_direction=2,
+                ),
+                is_circular=False,
+                terminal_name="Terminal B",
             ),
         ]
 
@@ -198,12 +212,12 @@ class TestBusPositions:
 
         mock_positions = [
             BusPosition(
-                route=RouteIdentifier(bus_line="8000", bus_direction=1),
+                route_id=12345,
                 position=Coordinate(latitude=-23.550520, longitude=-46.633308),
                 time_updated=datetime.now(UTC),
             ),
             BusPosition(
-                route=RouteIdentifier(bus_line="8000", bus_direction=1),
+                route_id=12345,
                 position=Coordinate(latitude=-23.551234, longitude=-46.634567),
                 time_updated=datetime.now(UTC),
             ),
@@ -216,10 +230,7 @@ class TestBusPositions:
         ):
             request_data = BusPositionsRequest(
                 routes=[
-                    BusRouteSchema(
-                        route_id=12345,
-                        route=RouteIdentifierSchema(bus_line="8000", bus_direction=1),
-                    ),
+                    BusRouteRequestSchema(route_id=12345),
                 ]
             )
 
@@ -236,9 +247,8 @@ class TestBusPositions:
             assert len(data["buses"]) == 2
 
             first_bus = data["buses"][0]
-            assert "route" in first_bus
-            assert first_bus["route"]["bus_line"] == "8000"
-            assert first_bus["route"]["bus_direction"] == 1
+            assert "route_id" in first_bus
+            assert first_bus["route_id"] == 12345
             assert "position" in first_bus
             assert "latitude" in first_bus["position"]
             assert "longitude" in first_bus["position"]
@@ -263,10 +273,7 @@ class TestBusPositions:
         ):
             request_data = BusPositionsRequest(
                 routes=[
-                    BusRouteSchema(
-                        route_id=99999,
-                        route=RouteIdentifierSchema(bus_line="123", bus_direction=1),
-                    ),
+                    BusRouteRequestSchema(route_id=99999),
                 ]
             )
 
@@ -298,10 +305,7 @@ class TestBusPositions:
         ):
             request_data = BusPositionsRequest(
                 routes=[
-                    BusRouteSchema(
-                        route_id=12345,
-                        route=RouteIdentifierSchema(bus_line="8000", bus_direction=1),
-                    ),
+                    BusRouteRequestSchema(route_id=12345),
                 ]
             )
 
@@ -329,34 +333,37 @@ class TestBusPositions:
         }
         auth = await create_user_and_login(client, user_data)
 
-        mock_positions = [
+        mock_position_12345 = [
             BusPosition(
-                route=RouteIdentifier(bus_line="8000", bus_direction=1),
+                route_id=12345,
                 position=Coordinate(latitude=-23.550520, longitude=-46.633308),
                 time_updated=datetime.now(UTC),
             ),
+        ]
+        mock_position_67890 = [
             BusPosition(
-                route=RouteIdentifier(bus_line="9000", bus_direction=2),
+                route_id=67890,
                 position=Coordinate(latitude=-23.560520, longitude=-46.643308),
                 time_updated=datetime.now(UTC),
             ),
         ]
 
+        def mock_get_positions(route_id: int) -> list[BusPosition]:
+            if route_id == 12345:
+                return mock_position_12345
+            elif route_id == 67890:
+                return mock_position_67890
+            return []
+
         with patch(
             "src.adapters.external.sptrans_adapter.SpTransAdapter.get_bus_positions",
             new_callable=AsyncMock,
-            return_value=mock_positions,
+            side_effect=mock_get_positions,
         ):
             request_data = BusPositionsRequest(
                 routes=[
-                    BusRouteSchema(
-                        route_id=12345,
-                        route=RouteIdentifierSchema(bus_line="8000", bus_direction=1),
-                    ),
-                    BusRouteSchema(
-                        route_id=67890,
-                        route=RouteIdentifierSchema(bus_line="9000", bus_direction=2),
-                    ),
+                    BusRouteRequestSchema(route_id=12345),
+                    BusRouteRequestSchema(route_id=67890),
                 ]
             )
 
@@ -370,9 +377,9 @@ class TestBusPositions:
             data = response.json()
 
             assert len(data["buses"]) == 2
-            bus_lines = [bus["route"]["bus_line"] for bus in data["buses"]]
-            assert "8000" in bus_lines
-            assert "9000" in bus_lines
+            route_ids = [bus["route_id"] for bus in data["buses"]]
+            assert 12345 in route_ids
+            assert 67890 in route_ids
 
     @pytest.mark.asyncio
     async def test_get_bus_position_returns_500_when_api_error(
@@ -393,10 +400,7 @@ class TestBusPositions:
         ):
             request_data = BusPositionsRequest(
                 routes=[
-                    BusRouteSchema(
-                        route_id=12345,
-                        route=RouteIdentifierSchema(bus_line="8000", bus_direction=1),
-                    ),
+                    BusRouteRequestSchema(route_id=12345),
                 ]
             )
 
@@ -420,13 +424,8 @@ class TestBusPositions:
         }
         auth = await create_user_and_login(client, user_data)
 
-        invalid_request_data: dict[str, list[dict[str, int | dict[str, str | int]]]] = {
-            "routes": [
-                {
-                    "route_id": 12345,
-                    "route": {"bus_line": "8000", "bus_direction": 3},
-                }
-            ]
+        invalid_request_data: dict[str, list[dict[str, str]]] = {
+            "routes": [{"route_id": "not_an_int"}]
         }
 
         response = await client.post(
@@ -472,16 +471,11 @@ class TestBusPositions:
     ) -> None:
         request_data = BusPositionsRequest(
             routes=[
-                BusRouteSchema(
-                    route_id=12345,
-                    route=RouteIdentifierSchema(bus_line="8000", bus_direction=1),
-                ),
+                BusRouteRequestSchema(route_id=12345),
             ]
         )
 
-        response = await client.post(
-            "/routes/positions", json=request_data.model_dump()
-        )
+        response = await client.post("/routes/positions", json=request_data.model_dump())
 
         assert response.status_code == 401
 

@@ -46,13 +46,28 @@ def override_dependency(
 
 
 class TestSearchRoutes:
-
     @pytest.mark.asyncio
     async def test_search_endpoint_success(
         self, client: TestClient, mock_service: RouteService
     ) -> None:
-        bus_route_1 = BusRoute(route_id=2044, route=RouteIdentifier(bus_line="8075", bus_direction=1))
-        bus_route_2 = BusRoute(route_id=34812, route=RouteIdentifier(bus_line="8075", bus_direction=2))
+        bus_route_1 = BusRoute(
+            route_id=2044,
+            route=RouteIdentifier(
+                bus_line="8075",
+                bus_direction=1,
+            ),
+            is_circular=False,
+            terminal_name="Terminal A",
+        )
+        bus_route_2 = BusRoute(
+            route_id=34812,
+            route=RouteIdentifier(
+                bus_line="8075",
+                bus_direction=2,
+            ),
+            is_circular=False,
+            terminal_name="Terminal B",
+        )
 
         mock_service.search_routes.return_value = [bus_route_1, bus_route_2]  # type: ignore[attr-defined]
 
@@ -81,8 +96,16 @@ class TestSearchRoutes:
         self, client: TestClient, mock_service: RouteService
     ) -> None:
         """Test search with destination name query."""
-        route_identifier = RouteIdentifier(bus_line="809", bus_direction=1)
-        bus_route = BusRoute(route_id=1234, route=route_identifier)
+        route_identifier = RouteIdentifier(
+            bus_line="809",
+            bus_direction=1,
+        )
+        bus_route = BusRoute(
+            route_id=1234,
+            route=route_identifier,
+            is_circular=False,
+            terminal_name="Vila Nova Conceição",
+        )
 
         mock_service.search_routes.return_value = [bus_route]  # type: ignore[attr-defined]
 
@@ -133,24 +156,15 @@ class TestBusPositions:
         self, client: TestClient, mock_service: RouteService
     ) -> None:
         """Test successful positions retrieval."""
-        route_identifier = RouteIdentifier(bus_line="8075-10", bus_direction=1)
-
         position = BusPosition(
-            route=route_identifier,
+            route_id=2044,
             position=Coordinate(latitude=-23.5, longitude=-46.6),
             time_updated=datetime.now(UTC),
         )
 
         mock_service.get_bus_positions.return_value = [position]  # type: ignore[attr-defined]
 
-        payload = {
-            "routes": [
-                {
-                    "route_id": 2044,
-                    "route": {"bus_line": "8075-10", "bus_direction": 1},
-                }
-            ]
-        }
+        payload = {"routes": [{"route_id": 2044}]}
 
         response = client.post("/routes/positions", json=payload)
 
@@ -162,17 +176,17 @@ class TestBusPositions:
 
         bus = data["buses"][0]
 
-        assert bus["route"]["bus_line"] == "8075-10"
+        assert bus["route_id"] == 2044
         assert "position" in bus
         assert "latitude" in bus["position"]
         assert "longitude" in bus["position"]
         assert "time_updated" in bus
 
         mock_service.get_bus_positions.assert_awaited_once()  # type: ignore[attr-defined]
-        called_arg = mock_service.get_bus_positions.await_args.args[0]  # type: ignore[attr-defined]
-        assert len(called_arg) == 1
-        assert called_arg[0].route_id == 2044
-        assert called_arg[0].route.bus_line == "8075-10"
+        # Service now receives route_ids: list[int]
+        called_args = mock_service.get_bus_positions.await_args.args  # type: ignore[attr-defined]
+        route_ids = called_args[0]
+        assert route_ids == [2044]
 
     @pytest.mark.asyncio
     async def test_positions_endpoint_multiple_routes(
@@ -180,12 +194,12 @@ class TestBusPositions:
     ) -> None:
         """Test positions for multiple routes."""
         position1 = BusPosition(
-            route=RouteIdentifier(bus_line="8075-10", bus_direction=1),
+            route_id=2044,
             position=Coordinate(latitude=-23.5, longitude=-46.6),
             time_updated=datetime.now(UTC),
         )
         position2 = BusPosition(
-            route=RouteIdentifier(bus_line="809-10", bus_direction=1),
+            route_id=5678,
             position=Coordinate(latitude=-23.6, longitude=-46.7),
             time_updated=datetime.now(UTC),
         )
@@ -194,14 +208,8 @@ class TestBusPositions:
 
         payload = {
             "routes": [
-                {
-                    "route_id": 2044,
-                    "route": {"bus_line": "8075-10", "bus_direction": 1},
-                },
-                {
-                    "route_id": 5678,
-                    "route": {"bus_line": "809-10", "bus_direction": 1},
-                },
+                {"route_id": 2044},
+                {"route_id": 5678},
             ]
         }
 
@@ -220,14 +228,7 @@ class TestBusPositions:
         """Test that service exception returns 500 error."""
         mock_service.get_bus_positions.side_effect = RuntimeError("boom")  # type: ignore[attr-defined]
 
-        payload = {
-            "routes": [
-                {
-                    "route_id": 2044,
-                    "route": {"bus_line": "8075-10", "bus_direction": 1},
-                }
-            ]
-        }
+        payload = {"routes": [{"route_id": 2044}]}
 
         response = client.post("/routes/positions", json=payload)
 

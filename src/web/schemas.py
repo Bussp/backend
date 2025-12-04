@@ -36,18 +36,35 @@ class CoordinateSchema(BaseModel):
 class BusPositionSchema(BaseModel):
     """Schema for bus position information."""
 
-    route: RouteIdentifierSchema
+    route_id: int = Field(..., description="Provider-specific route identifier")
     position: CoordinateSchema
     time_updated: datetime = Field(..., description="Last update timestamp")
 
     model_config = {"populate_by_name": True}
 
 
-class BusRouteSchema(BaseModel):
-    """Schema for a resolved bus route (provider-specific ID + identifier)."""
+class BusRouteRequestSchema(BaseModel):
+    """Schema for bus route in requests (input from user).
+
+    Only requires route_id for querying positions.
+    """
+
+    route_id: int = Field(..., description="Provider-specific route identifier")
+
+
+class BusRouteResponseSchema(BaseModel):
+    """Schema for bus route in responses (output to user).
+
+    Includes full route information with metadata.
+    """
 
     route_id: int = Field(..., description="Provider-specific route identifier")
     route: RouteIdentifierSchema
+    is_circular: bool = Field(..., description="Whether the route is circular")
+    terminal_name: str = Field(
+        ...,
+        description="Terminal name (primary if direction=1, secondary if direction=2)",
+    )
 
 
 # ===== User Management Schemas =====
@@ -108,8 +125,8 @@ class CreateTripResponse(BaseModel):
 class BusPositionsRequest(BaseModel):
     """Request schema for querying bus positions."""
 
-    routes: list[BusRouteSchema] = Field(
-        ..., description="List of routes to query positions"
+    routes: list[BusRouteRequestSchema] = Field(
+        ..., description="List of routes to query positions for"
     )
 
 
@@ -132,7 +149,7 @@ class RouteSearchRequest(BaseModel):
 class RouteSearchResponse(BaseModel):
     """Response schema for route search results."""
 
-    routes: list[BusRouteSchema] = Field(
+    routes: list[BusRouteResponseSchema] = Field(
         ..., description="List of matching routes with provider IDs"
     )
 
@@ -142,9 +159,7 @@ class RouteShapeResponse(BaseModel):
 
     route_id: str = Field(..., description="Route identifier")
     shape_id: str = Field(..., description="GTFS shape identifier")
-    points: list[CoordinateSchema] = Field(
-        ..., description="Ordered list of coordinates"
-    )
+    points: list[CoordinateSchema] = Field(..., description="Ordered list of coordinates")
 
 
 # ===== Ranking Schemas =====

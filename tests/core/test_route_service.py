@@ -28,14 +28,9 @@ async def test_get_bus_positions_calls_provider() -> None:
 
     bus_provider: BusProviderPort = cast(BusProviderPort, raw_provider)
 
-    route_identifier: RouteIdentifier = RouteIdentifier(
-        bus_line="8075-10",
-        bus_direction=1,
-    )
-
     expected_positions: list[BusPosition] = [
         BusPosition(
-            route=route_identifier,
+            route_id=1234,
             position=Coordinate(latitude=-23.0, longitude=-46.0),
             time_updated=datetime.now(UTC),
         ),
@@ -44,16 +39,11 @@ async def test_get_bus_positions_calls_provider() -> None:
     raw_provider.get_bus_positions.return_value = expected_positions
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
-    service: RouteService = RouteService(
-        bus_provider=bus_provider, gtfs_repository=gtfs_repo
-    )
+    service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
 
-    routes = [
-        BusRoute(route_id=1234, route=route_identifier),
-    ]
-    result: list[BusPosition] = await service.get_bus_positions(routes)
+    result: list[BusPosition] = await service.get_bus_positions([1234])
 
-    raw_provider.get_bus_positions.assert_awaited_once_with(routes)
+    raw_provider.get_bus_positions.assert_awaited_once_with(1234)
     assert result == expected_positions
 
 
@@ -72,6 +62,8 @@ async def test_search_routes_calls_provider() -> None:
     expected_bus_route: BusRoute = BusRoute(
         route_id=1234,
         route=route_identifier,
+        is_circular=False,
+        terminal_name="Terminal A",
     )
 
     expected_routes: list[BusRoute] = [expected_bus_route]
@@ -79,9 +71,7 @@ async def test_search_routes_calls_provider() -> None:
     raw_provider.search_routes.return_value = expected_routes
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
-    service: RouteService = RouteService(
-        bus_provider=bus_provider, gtfs_repository=gtfs_repo
-    )
+    service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
 
     query = "8075"
     result: list[BusRoute] = await service.search_routes(query)
@@ -99,21 +89,12 @@ async def test_get_bus_positions_propagates_exception_from_provider() -> None:
     bus_provider: BusProviderPort = cast(BusProviderPort, raw_provider)
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
-    service: RouteService = RouteService(
-        bus_provider=bus_provider, gtfs_repository=gtfs_repo
-    )
-
-    routes = [
-        BusRoute(
-            route_id=1234,
-            route=RouteIdentifier(bus_line="8075-10", bus_direction=1),
-        ),
-    ]
+    service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
 
     with pytest.raises(RuntimeError, match="boom"):
-        await service.get_bus_positions(routes)
+        await service.get_bus_positions([1234])
 
-    raw_provider.get_bus_positions.assert_awaited_once_with(routes)
+    raw_provider.get_bus_positions.assert_awaited_once_with(1234)
 
 
 @pytest.mark.asyncio
@@ -125,9 +106,7 @@ async def test_search_routes_propagates_exception_from_provider() -> None:
     bus_provider: BusProviderPort = cast(BusProviderPort, raw_provider)
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
-    service: RouteService = RouteService(
-        bus_provider=bus_provider, gtfs_repository=gtfs_repo
-    )
+    service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
 
     with pytest.raises(RuntimeError, match="search failed"):
         await service.search_routes("8075")
@@ -192,9 +171,7 @@ def test_get_route_shape_with_many_points() -> None:
 
     points = [
         RouteShapePoint(
-            coordinate=Coordinate(
-                latitude=-23.5505 + i * 0.001, longitude=-46.6333 + i * 0.001
-            ),
+            coordinate=Coordinate(latitude=-23.5505 + i * 0.001, longitude=-46.6333 + i * 0.001),
             sequence=i + 1,
             distance_traveled=float(i * 10),
         )

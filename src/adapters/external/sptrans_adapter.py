@@ -133,36 +133,30 @@ class SpTransAdapter(BusProviderPort):
 
         return response
 
-    async def get_bus_positions(self, routes: list[BusRoute]) -> list[BusPosition]:
+    async def get_bus_positions(
+        self,
+        route_id: int,
+    ) -> list[BusPosition]:
         """
         Get real-time positions for specified routes.
 
         Args:
-            routes: List of BusRoute objects containing route info.
+            route_ids: List of provider-specific route IDs.
 
         Returns:
-            List of BusPosition objects with route identifier and coordinates.
+            List of BusPosition objects with route_id and coordinates.
         """
-        positions: list[BusPosition] = []
 
-        for bus_route in routes:
-            response = await self._request_with_auth_retry(
-                "GET",
-                "/Posicao/Linha",
-                params={"codigoLinha": bus_route.route_id},
-            )
+        response = await self._request_with_auth_retry(
+            "GET",
+            "/Posicao/Linha",
+            params={"codigoLinha": route_id},
+        )
 
-            if response.status_code != 200:
-                continue
+        response_data = SPTransPositionsResponse.model_validate(response.json())
+        route_positions = map_positions_response_to_bus_positions(response_data, route_id)
 
-            response_data = SPTransPositionsResponse.model_validate(response.json())
-            route_positions = map_positions_response_to_bus_positions(
-                response_data,
-                bus_route.route,
-            )
-            positions.extend(route_positions)
-
-        return positions
+        return route_positions
 
     async def search_routes(self, query: str) -> list[BusRoute]:
         """
@@ -181,9 +175,7 @@ class SpTransAdapter(BusProviderPort):
         )
 
         if response.status_code != 200:
-            raise RuntimeError(
-                f"SPTrans returned status {response.status_code} for search."
-            )
+            raise RuntimeError(f"SPTrans returned status {response.status_code} for search.")
 
         response_data = SPTransLineSearchResponse.model_validate(response.json())
         bus_routes: list[BusRoute] = map_search_response_to_bus_route_list(response_data)
