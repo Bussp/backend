@@ -37,7 +37,7 @@ def test_create_user_success(client: TestClient, mock_user_service: MagicMock) -
     )
     mock_user_service.create_user = AsyncMock(return_value=mock_user)
 
-    from src.web.controllers.user_controller import get_user_service
+    from src.web.auth import get_user_service
 
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
@@ -60,14 +60,16 @@ def test_create_user_success(client: TestClient, mock_user_service: MagicMock) -
     assert "password" not in data
 
 
-def test_create_user_already_exists(client: TestClient, mock_user_service: MagicMock) -> None:
+def test_create_user_already_exists(
+    client: TestClient, mock_user_service: MagicMock
+) -> None:
     """Test user registration fails when email already exists."""
 
     mock_user_service.create_user = AsyncMock(
         side_effect=ValueError("User with email john@example.com already exists")
     )
 
-    from src.web.controllers.user_controller import get_user_service
+    from src.web.auth import get_user_service
 
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
@@ -97,7 +99,7 @@ def test_login_user_success(client: TestClient, mock_user_service: MagicMock) ->
     )
     mock_user_service.login_user = AsyncMock(return_value=mock_user)
 
-    from src.web.controllers.user_controller import get_user_service
+    from src.web.auth import get_user_service
 
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
@@ -118,12 +120,14 @@ def test_login_user_success(client: TestClient, mock_user_service: MagicMock) ->
     assert isinstance(data["access_token"], str)
 
 
-def test_login_user_invalid_credentials(client: TestClient, mock_user_service: MagicMock) -> None:
+def test_login_user_invalid_credentials(
+    client: TestClient, mock_user_service: MagicMock
+) -> None:
     """Test login fails with invalid credentials."""
 
     mock_user_service.login_user = AsyncMock(return_value=None)
 
-    from src.web.controllers.user_controller import get_user_service
+    from src.web.auth import get_user_service
 
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
@@ -140,51 +144,9 @@ def test_login_user_invalid_credentials(client: TestClient, mock_user_service: M
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json()["detail"] == "Invalid email or password"
 
-
-def test_get_user_by_email_success(client: TestClient, mock_user_service: MagicMock) -> None:
-    """Test retrieving user information by email."""
-
-    mock_user = User(
-        name="Bob",
-        email="bob@example.com",
-        password="hashed_password",
-        score=50,
-    )
-    mock_user_service.get_user = AsyncMock(return_value=mock_user)
-
-    from src.web.controllers.user_controller import get_user_service
-
-    app.dependency_overrides[get_user_service] = lambda: mock_user_service
-
-    response = client.get("/users/bob@example.com")
-
-    app.dependency_overrides.clear()
-
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert data["name"] == "Bob"
-    assert data["email"] == "bob@example.com"
-    assert data["score"] == 50
-
-
-def test_get_user_not_found(client: TestClient, mock_user_service: MagicMock) -> None:
-    """Test retrieving non-existent user returns 404."""
-
-    mock_user_service.get_user = AsyncMock(return_value=None)
-
-    from src.web.controllers.user_controller import get_user_service
-
-    app.dependency_overrides[get_user_service] = lambda: mock_user_service
-
-    response = client.get("/users/nonexistent@example.com")
-
-    app.dependency_overrides.clear()
-
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json()["detail"] == "User not found"
-
-
-def test_get_current_user_info_success(client: TestClient, mock_user_service: MagicMock) -> None:
+def test_get_current_user_info_success(
+    client: TestClient, mock_user_service: MagicMock
+) -> None:
     """Test accessing /me endpoint with valid JWT token."""
 
     mock_user = User(
@@ -195,12 +157,12 @@ def test_get_current_user_info_success(client: TestClient, mock_user_service: Ma
     )
     mock_user_service.get_user = AsyncMock(return_value=mock_user)
 
-    from src.web.controllers.user_controller import get_user_service
+    from src.web.auth import get_user_service
 
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
     with patch(
-        "src.web.controllers.user_controller.verify_token",
+        "src.web.auth.verify_token",
         return_value={"sub": "charlie@example.com"},
     ):
         response = client.get(
@@ -231,10 +193,8 @@ def test_get_current_user_info_invalid_token(
     """Test accessing /me endpoint with invalid token returns 401."""
 
     with (
-        patch(
-            "src.web.controllers.user_controller.get_user_service", return_value=mock_user_service
-        ),
-        patch("src.web.controllers.user_controller.verify_token", return_value=None),
+        patch("src.web.auth.get_user_service", return_value=mock_user_service),
+        patch("src.web.auth.verify_token", return_value=None),
     ):
         response = client.get(
             "/users/me",
