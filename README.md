@@ -21,6 +21,36 @@ Este projeto implementa um sistema gamificado onde usuários ganham pontos ao us
 - Python 3.11+
 - pip
 
+### Instalação e Execução com docker
+1. **Clone o repositório**:
+   ```bash
+   cd /home/kim/code/estudos/bussp
+   ```
+
+2. **Execute**:
+   ```bash
+   docker run -d -p 127.0.0.1:8000:8000 backend
+   ```
+
+3. **Acesse a API**:
+   - API: http://localhost:8000
+   - Documentação interativa: http://localhost:8000/docs
+   - Documentação alternativa: http://localhost:8000/redoc
+
+4. **Para matar o container**:
+   Pegue o id do container em `CONTAINER ID`
+   ```bash
+   docker ps
+   ```
+   ```bash
+   CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+   ```
+   Execute:
+   ```bash
+   docker stop ${id}
+   docker rm ${id}
+   ```
+
 ### Instalação e Execução
 
 1. **Clone o repositório**:
