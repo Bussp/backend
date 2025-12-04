@@ -50,9 +50,7 @@ def test_get_route_shape_found() -> None:
     mock_conn.execute.side_effect = [mock_cursor1, mock_cursor2]
 
     # Patch get_gtfs_db to return our mock connection
-    with patch(
-        "src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db"
-    ) as mock_get_db:
+    with patch("src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db") as mock_get_db:
         mock_get_db.return_value.__enter__.return_value = mock_conn
 
         # Act
@@ -91,9 +89,7 @@ def test_get_route_shape_route_not_found() -> None:
     mock_cursor.fetchone.return_value = None
     mock_conn.execute.return_value = mock_cursor
 
-    with patch(
-        "src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db"
-    ) as mock_get_db:
+    with patch("src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db") as mock_get_db:
         mock_get_db.return_value.__enter__.return_value = mock_conn
 
         # Act
@@ -120,9 +116,7 @@ def test_get_route_shape_no_shape_points() -> None:
 
     mock_conn.execute.side_effect = [mock_cursor1, mock_cursor2]
 
-    with patch(
-        "src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db"
-    ) as mock_get_db:
+    with patch("src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db") as mock_get_db:
         mock_get_db.return_value.__enter__.return_value = mock_conn
 
         # Act
@@ -155,9 +149,7 @@ def test_get_route_shape_single_point() -> None:
 
     mock_conn.execute.side_effect = [mock_cursor1, mock_cursor2]
 
-    with patch(
-        "src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db"
-    ) as mock_get_db:
+    with patch("src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db") as mock_get_db:
         mock_get_db.return_value.__enter__.return_value = mock_conn
 
         # Act
@@ -199,9 +191,7 @@ def test_get_route_shape_null_distance_traveled() -> None:
 
     mock_conn.execute.side_effect = [mock_cursor1, mock_cursor2]
 
-    with patch(
-        "src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db"
-    ) as mock_get_db:
+    with patch("src.adapters.repositories.gtfs_repository_adapter.get_gtfs_db") as mock_get_db:
         mock_get_db.return_value.__enter__.return_value = mock_conn
 
         # Act

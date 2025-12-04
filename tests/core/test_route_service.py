@@ -45,9 +45,7 @@ async def test_get_bus_positions_calls_auth_and_provider() -> None:
     raw_provider.get_bus_positions.return_value = expected_positions
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
-    service: RouteService = RouteService(
-        bus_provider=bus_provider, gtfs_repository=gtfs_repo
-    )
+    service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
 
     # Act
     result: list[BusPosition] = await service.get_bus_positions(bus_route)
@@ -83,9 +81,7 @@ async def test_get_route_details_calls_auth_and_provider() -> None:
     raw_provider.get_route_details.return_value = expected_routes
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
-    service: RouteService = RouteService(
-        bus_provider=bus_provider, gtfs_repository=gtfs_repo
-    )
+    service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
 
     # Act
     result: list[BusRoute] = await service.get_route_details(route_identifier)
@@ -116,9 +112,7 @@ async def test_get_bus_positions_propagates_exception_from_provider() -> None:
     )
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
-    service: RouteService = RouteService(
-        bus_provider=bus_provider, gtfs_repository=gtfs_repo
-    )
+    service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
 
     # Act / Assert
     with pytest.raises(RuntimeError, match="boom"):
@@ -145,9 +139,7 @@ async def test_get_route_details_propagates_exception_from_authenticate() -> Non
     )
 
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
-    service: RouteService = RouteService(
-        bus_provider=bus_provider, gtfs_repository=gtfs_repo
-    )
+    service: RouteService = RouteService(bus_provider=bus_provider, gtfs_repository=gtfs_repo)
 
     # Act / Assert
     with pytest.raises(RuntimeError, match="auth failed"):
@@ -214,7 +206,7 @@ def test_get_route_shape_not_found() -> None:
     result = service.get_route_shapes([route])
 
     # Assert
-    assert result == [] 
+    assert result == []
     gtfs_repo.get_route_shape.assert_called_once_with(route)
 
 
@@ -228,9 +220,7 @@ def test_get_route_shape_with_many_points() -> None:
     # Create a shape with many points
     points = [
         RouteShapePoint(
-            coordinate=Coordinate(
-                latitude=-23.5505 + i * 0.001, longitude=-46.6333 + i * 0.001
-            ),
+            coordinate=Coordinate(latitude=-23.5505 + i * 0.001, longitude=-46.6333 + i * 0.001),
             sequence=i + 1,
             distance_traveled=float(i * 10),
         )
@@ -245,7 +235,7 @@ def test_get_route_shape_with_many_points() -> None:
 
     # Act
     result = service.get_route_shapes([route])
-    
+
     # Assert
     assert result is not None
     assert len(result) == 1

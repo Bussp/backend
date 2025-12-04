@@ -587,9 +587,7 @@ class TestBusPositions:
             ]
         )
 
-        response = await client.post(
-            "/routes/positions", json=request_data.model_dump()
-        )
+        response = await client.post("/routes/positions", json=request_data.model_dump())
 
         assert response.status_code == 401
 
@@ -647,9 +645,7 @@ class TestRouteShapes:
         }
         auth = await create_user_and_login(client, user_data)
 
-        request_data = {
-            "routes": [{"bus_line": "NONEXISTENT-ROUTE-12345", "bus_direction": 1}]
-        }
+        request_data = {"routes": [{"bus_line": "NONEXISTENT-ROUTE-12345", "bus_direction": 1}]}
 
         response = await client.post(
             "/routes/shapes",

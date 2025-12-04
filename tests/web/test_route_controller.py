@@ -301,9 +301,7 @@ async def test_shapes_endpoint_success(client: TestClient, mock_service: RouteSe
 
 
 @pytest.mark.asyncio
-async def test_shapes_endpoint_single_route(
-    client: TestClient, mock_service: RouteService
-) -> None:
+async def test_shapes_endpoint_single_route(client: TestClient, mock_service: RouteService) -> None:
     """
     Testa o endpoint POST /routes/shapes com uma única rota.
     """
@@ -340,9 +338,7 @@ async def test_shapes_endpoint_single_route(
 
 
 @pytest.mark.asyncio
-async def test_shapes_endpoint_empty_result(
-    client: TestClient, mock_service: RouteService
-) -> None:
+async def test_shapes_endpoint_empty_result(client: TestClient, mock_service: RouteService) -> None:
     """
     Testa o endpoint POST /routes/shapes quando nenhuma rota é encontrada.
     """

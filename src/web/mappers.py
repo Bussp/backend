@@ -156,9 +156,7 @@ def map_route_shape_to_response(shape: RouteShape) -> RouteShapeResponse:
     return RouteShapeResponse(
         route=map_route_identifier_domain_to_schema(shape.route),
         shape_id=shape.shape_id,
-        points=[
-            map_coordinate_domain_to_schema(point.coordinate) for point in shape.points
-        ],
+        points=[map_coordinate_domain_to_schema(point.coordinate) for point in shape.points],
     )
 
 
@@ -205,6 +203,4 @@ def map_history_entries_to_response(entries: list[HistoryEntry]) -> HistoryRespo
     Returns:
         HistoryResponse for API
     """
-    return HistoryResponse(
-        trips=[map_history_entry_to_schema(entry) for entry in entries]
-    )
+    return HistoryResponse(trips=[map_history_entry_to_schema(entry) for entry in entries])

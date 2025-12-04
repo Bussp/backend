@@ -14,9 +14,7 @@ class RouteService:
     real-time bus information and GTFS data for route shapes.
     """
 
-    def __init__(
-        self, bus_provider: BusProviderPort, gtfs_repository: GTFSRepositoryPort
-    ):
+    def __init__(self, bus_provider: BusProviderPort, gtfs_repository: GTFSRepositoryPort):
         """
         Initialize the route service.
 
