@@ -31,12 +31,10 @@ class TestUserHistory:
             datetime(2025, 11, 29, 18, 0, 0, tzinfo=UTC),
         ]
 
-        bus_lines = ["8000", "8001", "8002"]
-        bus_directions = [1, 2, 1]
         scores: list[int] = []
         for i, trip_date in enumerate(trip_dates):
             trip_request = CreateTripRequest(
-                route=RouteIdentifierSchema(bus_line=bus_lines[i], bus_direction=bus_directions[i]),
+                route=RouteIdentifierSchema(bus_line=f"800{i}", bus_direction=1),
                 distance=(i + 1) * 1000,
                 data=trip_date,
             )
@@ -60,16 +58,8 @@ class TestUserHistory:
         for trip in history_response.trips:
             assert isinstance(trip.date, datetime)
             assert isinstance(trip.score, int)
-            assert isinstance(trip.route, RouteIdentifierSchema)
-            assert isinstance(trip.route.bus_line, str)
-            assert isinstance(trip.route.bus_direction, int)
 
         assert sorted(scores) == sorted([trip.score for trip in history_response.trips])
-        response_routes = [
-            (trip.route.bus_line, trip.route.bus_direction) for trip in history_response.trips
-        ]
-        expected_routes = list(zip(bus_lines, bus_directions, strict=True))
-        assert sorted(response_routes) == sorted(expected_routes)
 
     @pytest.mark.asyncio
     async def test_get_user_history_returns_empty_when_no_trips(

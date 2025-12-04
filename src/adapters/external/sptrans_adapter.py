@@ -111,8 +111,8 @@ class SpTransAdapter(BusProviderPort):
                 pos: BusPosition = BusPosition(
                     route=bus_route.route,
                     position=Coordinate(
-                        latitude=vehicle["py"] / 1_000_000,
-                        longitude=vehicle["px"] / 1_000_000,
+                        latitude=vehicle["py"],
+                        longitude=vehicle["px"],
                     ),
                     time_updated=datetime.fromisoformat(vehicle["ta"]),
                 )

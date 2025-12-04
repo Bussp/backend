@@ -28,6 +28,8 @@ def get_history_service(db: AsyncSession = Depends(get_db)) -> HistoryService:
     return HistoryService(history_repo)
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.get("/", response_model=HistoryResponse)
 async def get_user_history(
     history_service: HistoryService = Depends(get_history_service),

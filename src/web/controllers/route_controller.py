@@ -46,6 +46,8 @@ def get_route_service() -> RouteService:
     return RouteService(bus_provider, gtfs_repository)
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.post("/details", response_model=BusRoutesDetailsResponse)
 async def get_route_details_endpoint(
     request: BusRoutesDetailsRequest,
@@ -96,6 +98,8 @@ async def get_route_details_endpoint(
         ) from e
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.post("/positions", response_model=BusPositionsResponse)
 async def get_bus_positions(
     request: BusPositionsRequest,
@@ -138,6 +142,8 @@ async def get_bus_positions(
         ) from e
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.get("/shape/{route_id}", response_model=RouteShapeResponse)
 async def get_route_shape(
     route_id: str,
