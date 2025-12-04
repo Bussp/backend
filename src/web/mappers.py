@@ -18,6 +18,7 @@ from .schemas import (
     BusRouteResponseSchema,
     CoordinateSchema,
     HistoryResponse,
+    RankingUserResponse,
     RouteIdentifierSchema,
     RouteShapeResponse,
     TripHistoryEntry,
@@ -55,6 +56,37 @@ def map_user_domain_list_to_response(users: list[User]) -> list[UserResponse]:
         List of UserResponse schemas
     """
     return [map_user_domain_to_response(user) for user in users]
+
+
+def map_user_domain_to_ranking_response(user: User) -> RankingUserResponse:
+    """
+    Map a User domain model to a RankingUserResponse schema (excludes email).
+
+    Args:
+        user: User domain model
+
+    Returns:
+        RankingUserResponse schema
+    """
+    return RankingUserResponse(
+        name=user.name,
+        score=user.score,
+    )
+
+
+def map_user_domain_list_to_ranking_response(
+    users: list[User],
+) -> list[RankingUserResponse]:
+    """
+    Map a list of User domain models to RankingUserResponse schemas (excludes email).
+
+    Args:
+        users: List of User domain models
+
+    Returns:
+        List of RankingUserResponse schemas
+    """
+    return [map_user_domain_to_ranking_response(user) for user in users]
 
 
 # ===== Route Mappers =====
