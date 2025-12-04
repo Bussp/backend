@@ -16,7 +16,7 @@ from ..auth import get_current_user
 from ..mappers import (
     map_bus_position_list_to_schema,
     map_route_identifier_schema_to_domain,
-    map_route_shape_to_response,
+    map_route_shapes_to_response,
 )
 from ..schemas import (
     BusPositionsRequest,
@@ -25,7 +25,8 @@ from ..schemas import (
     BusRoutesDetailsRequest,
     BusRoutesDetailsResponse,
     RouteIdentifierSchema,
-    RouteShapeResponse,
+    RouteShapesRequest,
+    RouteShapesResponse,
 )
 
 router = APIRouter(prefix="/routes", tags=["routes"])
@@ -144,40 +145,37 @@ async def get_bus_positions(
 
 # NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
 # makes this endpoint only accessible to authenticated users (requires valid JWT token).
-@router.get("/shape/{route_id}", response_model=RouteShapeResponse)
-async def get_route_shape(
-    route_id: str,
+@router.post("/shapes", response_model=RouteShapesResponse)
+async def get_route_shapes(
+    request: RouteShapesRequest,
     route_service: RouteService = Depends(get_route_service),
     current_user: User = Depends(get_current_user),
-) -> RouteShapeResponse:
+) -> RouteShapesResponse:
     """
-    Get the geographic shape (coordinates) of a route from GTFS data.
+    Get the geographic shapes (coordinates) for multiple routes from GTFS data.
 
     Args:
-        route_id: Route identifier (e.g., "1012-10")
+        request: Request containing list of route identifiers (bus_line and direction)
         route_service: Injected route service
 
     Returns:
-        Ordered list of coordinates defining the route shape
+        List of route shapes with ordered coordinates
 
     Raises:
-        HTTPException: If route not found or database error occurs
+        HTTPException: If database error occurs
     """
     try:
-        shape = route_service.get_route_shape(route_id)
+        route_identifiers = [
+            map_route_identifier_schema_to_domain(route_schema) for route_schema in request.routes
+        ]
 
-        if shape is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Route '{route_id}' not found in GTFS database",
-            )
+        shapes = route_service.get_route_shapes(route_identifiers)
 
-        return map_route_shape_to_response(shape)
+        shape_responses = map_route_shapes_to_response(shapes)
+        return RouteShapesResponse(shapes=shape_responses)
 
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve route shape: {str(e)}",
+            detail=f"Failed to retrieve route shapes: {str(e)}",
         ) from e

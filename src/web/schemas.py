@@ -138,9 +138,23 @@ class BusRoutesDetailsResponse(BaseModel):
 class RouteShapeResponse(BaseModel):
     """Response schema for route shape coordinates."""
 
-    route_id: str = Field(..., description="Route identifier")
+    route: RouteIdentifierSchema = Field(..., description="Route identifier")
     shape_id: str = Field(..., description="GTFS shape identifier")
     points: list[CoordinateSchema] = Field(..., description="Ordered list of coordinates")
+
+
+class RouteShapesRequest(BaseModel):
+    """Request schema for querying multiple route shapes."""
+
+    routes: list[RouteIdentifierSchema] = Field(
+        ..., description="List of route identifiers to query shapes for"
+    )
+
+
+class RouteShapesResponse(BaseModel):
+    """Response schema for multiple route shapes."""
+
+    shapes: list[RouteShapeResponse] = Field(..., description="List of route shapes")
 
 
 # ===== Ranking Schemas =====

@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from fastapi.testclient import TestClient
 
 from src.core.models.bus import BusPosition, BusRoute, RouteIdentifier
 from src.core.models.coordinate import Coordinate
+from src.core.models.route_shape import RouteShape, RouteShapePoint
 from src.core.models.user import User
 from src.core.services.route_service import RouteService
 from src.main import app
@@ -31,6 +32,8 @@ def mock_service() -> RouteService:
     typed_service: RouteService = service
     typed_service.get_route_details = AsyncMock()  # type: ignore[method-assign]
     typed_service.get_bus_positions = AsyncMock()  # type: ignore[method-assign]
+    typed_service.get_route_shape = Mock()  # type: ignore[method-assign]
+    typed_service.get_route_shapes = Mock()  # type: ignore[method-assign]
     return typed_service
 
 
@@ -208,3 +211,166 @@ async def test_positions_endpoint_error_returns_500(
     assert response.status_code == 500
     body = response.json()
     assert "Failed to retrieve bus positions" in body["detail"]
+
+
+# =========================
+# /routes/shapes
+# =========================
+
+
+@pytest.mark.asyncio
+async def test_shapes_endpoint_success(client: TestClient, mock_service: RouteService) -> None:
+    """
+    Testa o endpoint POST /routes/shapes garantindo que:
+    - Ele chama RouteService.get_route_shapes()
+    - Ele retorna uma lista de shapes
+    """
+
+    # ----- Arrange -----
+    route1 = RouteIdentifier(bus_line="8075", bus_direction=1)
+    route2 = RouteIdentifier(bus_line="8075", bus_direction=2)
+
+    shape1 = RouteShape(
+        route=route1,
+        shape_id="shape_8075_1",
+        points=[
+            RouteShapePoint(
+                coordinate=Coordinate(latitude=-23.5505, longitude=-46.6333),
+                sequence=1,
+                distance_traveled=0.0,
+            ),
+            RouteShapePoint(
+                coordinate=Coordinate(latitude=-23.5510, longitude=-46.6340),
+                sequence=2,
+                distance_traveled=10.5,
+            ),
+        ],
+    )
+
+    shape2 = RouteShape(
+        route=route2,
+        shape_id="shape_8075_2",
+        points=[
+            RouteShapePoint(
+                coordinate=Coordinate(latitude=-23.5515, longitude=-46.6345),
+                sequence=1,
+                distance_traveled=0.0,
+            ),
+        ],
+    )
+
+    mock_service.get_route_shapes.return_value = [shape1, shape2]  # type: ignore[attr-defined]
+
+    payload = {
+        "routes": [
+            {"bus_line": "8075", "bus_direction": 1},
+            {"bus_line": "8075", "bus_direction": 2},
+        ]
+    }
+
+    # ----- Act -----
+    response = client.post("/routes/shapes", json=payload)
+
+    # ----- Assert -----
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "shapes" in data
+    assert len(data["shapes"]) == 2
+
+    # First shape
+    assert data["shapes"][0]["route"]["bus_line"] == "8075"
+    assert data["shapes"][0]["route"]["bus_direction"] == 1
+    assert data["shapes"][0]["shape_id"] == "shape_8075_1"
+    assert len(data["shapes"][0]["points"]) == 2
+
+    # Second shape
+    assert data["shapes"][1]["route"]["bus_line"] == "8075"
+    assert data["shapes"][1]["route"]["bus_direction"] == 2
+    assert data["shapes"][1]["shape_id"] == "shape_8075_2"
+    assert len(data["shapes"][1]["points"]) == 1
+
+    # Verify service was called correctly
+    mock_service.get_route_shapes.assert_called_once()  # type: ignore[attr-defined]
+    called_args = mock_service.get_route_shapes.call_args.args[0]  # type: ignore[attr-defined]
+    assert len(called_args) == 2
+    assert called_args[0].bus_line == "8075"
+    assert called_args[0].bus_direction == 1
+    assert called_args[1].bus_line == "8075"
+    assert called_args[1].bus_direction == 2
+
+
+@pytest.mark.asyncio
+async def test_shapes_endpoint_single_route(client: TestClient, mock_service: RouteService) -> None:
+    """
+    Testa o endpoint POST /routes/shapes com uma única rota.
+    """
+
+    # ----- Arrange -----
+    route = RouteIdentifier(bus_line="1012", bus_direction=1)
+
+    shape = RouteShape(
+        route=route,
+        shape_id="shape_1012_1",
+        points=[
+            RouteShapePoint(
+                coordinate=Coordinate(latitude=-23.5505, longitude=-46.6333),
+                sequence=1,
+                distance_traveled=0.0,
+            ),
+        ],
+    )
+
+    mock_service.get_route_shapes.return_value = [shape]  # type: ignore[attr-defined]
+
+    payload = {"routes": [{"bus_line": "1012", "bus_direction": 1}]}
+
+    # ----- Act -----
+    response = client.post("/routes/shapes", json=payload)
+
+    # ----- Assert -----
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data["shapes"]) == 1
+    assert data["shapes"][0]["route"]["bus_line"] == "1012"
+    assert data["shapes"][0]["route"]["bus_direction"] == 1
+
+
+@pytest.mark.asyncio
+async def test_shapes_endpoint_empty_result(client: TestClient, mock_service: RouteService) -> None:
+    """
+    Testa o endpoint POST /routes/shapes quando nenhuma rota é encontrada.
+    """
+
+    mock_service.get_route_shapes.return_value = []  # type: ignore[attr-defined]
+
+    payload = {"routes": [{"bus_line": "nonexistent", "bus_direction": 1}]}
+
+    # ----- Act -----
+    response = client.post("/routes/shapes", json=payload)
+
+    # ----- Assert -----
+    assert response.status_code == 200
+    data = response.json()
+    assert data["shapes"] == []
+
+
+@pytest.mark.asyncio
+async def test_shapes_endpoint_error_returns_500(
+    client: TestClient, mock_service: RouteService
+) -> None:
+    """
+    Testa se o controller retorna 500 caso o service levante exception
+    em /routes/shapes.
+    """
+
+    mock_service.get_route_shapes.side_effect = RuntimeError("boom")  # type: ignore[attr-defined]
+
+    payload = {"routes": [{"bus_line": "8075", "bus_direction": 1}]}
+
+    response = client.post("/routes/shapes", json=payload)
+
+    assert response.status_code == 500
+    body = response.json()
+    assert "Failed to retrieve route shapes" in body["detail"]

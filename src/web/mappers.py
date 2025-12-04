@@ -154,10 +154,23 @@ def map_route_shape_to_response(shape: RouteShape) -> RouteShapeResponse:
         RouteShapeResponse for API
     """
     return RouteShapeResponse(
-        route_id=shape.route_id,
+        route=map_route_identifier_domain_to_schema(shape.route),
         shape_id=shape.shape_id,
         points=[map_coordinate_domain_to_schema(point.coordinate) for point in shape.points],
     )
+
+
+def map_route_shapes_to_response(shapes: list[RouteShape]) -> list[RouteShapeResponse]:
+    """
+    Map a list of RouteShape domain models to RouteShapeResponse list.
+
+    Args:
+        shapes: List of RouteShape domain models
+
+    Returns:
+        List of RouteShapeResponse for API
+    """
+    return [map_route_shape_to_response(shape) for shape in shapes]
 
 
 # ===== History Mappers =====
