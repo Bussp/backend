@@ -62,18 +62,6 @@ class RouteService:
         await self.bus_provider.authenticate()
         return await self.bus_provider.get_route_details(route)
 
-    def get_route_shape(self, route: RouteIdentifier) -> RouteShape | None:
-        """
-        Get the geographic shape coordinates of a route from GTFS data.
-
-        Args:
-            route: Route identifier with bus_line and direction
-
-        Returns:
-            RouteShape with ordered coordinates, or None if route not found
-        """
-        return self.gtfs_repository.get_route_shape(route)
-
     def get_route_shapes(self, routes: list[RouteIdentifier]) -> list[RouteShape]:
         """
         Get the geographic shape coordinates for multiple routes from GTFS data.

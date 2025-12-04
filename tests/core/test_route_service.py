@@ -187,14 +187,15 @@ def test_get_route_shape_found() -> None:
     service = RouteService(bus_provider, gtfs_repo)
 
     # Act
-    result = service.get_route_shape(route)
+    result = service.get_route_shapes([route])
 
     # Assert
     assert result is not None
-    assert result.route.bus_line == "1012-10"
-    assert result.route.bus_direction == 1
-    assert result.shape_id == "84609"
-    assert len(result.points) == 2
+    assert len(result) == 1
+    assert result[0].route.bus_line == "1012-10"
+    assert result[0].route.bus_direction == 1
+    assert result[0].shape_id == "84609"
+    assert len(result[0].points) == 2
     gtfs_repo.get_route_shape.assert_called_once_with(route)
 
 
@@ -210,10 +211,10 @@ def test_get_route_shape_not_found() -> None:
     service = RouteService(bus_provider, gtfs_repo)
 
     # Act
-    result = service.get_route_shape(route)
+    result = service.get_route_shapes([route])
 
     # Assert
-    assert result is None
+    assert result == [] 
     gtfs_repo.get_route_shape.assert_called_once_with(route)
 
 
@@ -243,13 +244,14 @@ def test_get_route_shape_with_many_points() -> None:
     service = RouteService(bus_provider, gtfs_repo)
 
     # Act
-    result = service.get_route_shape(route)
-
+    result = service.get_route_shapes([route])
+    
     # Assert
     assert result is not None
-    assert len(result.points) == 100
-    assert result.points[0].sequence == 1
-    assert result.points[99].sequence == 100
+    assert len(result) == 1
+    assert len(result[0].points) == 100
+    assert result[0].points[0].sequence == 1
+    assert result[0].points[99].sequence == 100
     gtfs_repo.get_route_shape.assert_called_once_with(route)
 
 
@@ -277,11 +279,11 @@ def test_get_route_shape_with_special_characters() -> None:
     service = RouteService(bus_provider, gtfs_repo)
 
     # Act
-    result = service.get_route_shape(route)
+    result = service.get_route_shapes([route])
 
     # Assert
     assert result is not None
-    assert result.route.bus_line == "route-with-special_chars@123"
+    assert result[0].route.bus_line == "route-with-special_chars@123"
     gtfs_repo.get_route_shape.assert_called_once_with(route)
 
 
@@ -309,10 +311,11 @@ def test_get_route_shape_independent_of_bus_provider() -> None:
     service = RouteService(bus_provider, gtfs_repo)
 
     # Act
-    result = service.get_route_shape(route)
+    result = service.get_route_shapes([route])
 
     # Assert
     assert result is not None
+    assert len(result) == 1
     # Verify bus_provider was not called at all
     bus_provider.authenticate.assert_not_called()
     bus_provider.get_bus_positions.assert_not_called()
