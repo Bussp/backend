@@ -60,9 +60,7 @@ def test_create_user_success(client: TestClient, mock_user_service: MagicMock) -
     assert "password" not in data
 
 
-def test_create_user_already_exists(
-    client: TestClient, mock_user_service: MagicMock
-) -> None:
+def test_create_user_already_exists(client: TestClient, mock_user_service: MagicMock) -> None:
     """Test user registration fails when email already exists."""
 
     mock_user_service.create_user = AsyncMock(
@@ -120,9 +118,7 @@ def test_login_user_success(client: TestClient, mock_user_service: MagicMock) ->
     assert isinstance(data["access_token"], str)
 
 
-def test_login_user_invalid_credentials(
-    client: TestClient, mock_user_service: MagicMock
-) -> None:
+def test_login_user_invalid_credentials(client: TestClient, mock_user_service: MagicMock) -> None:
     """Test login fails with invalid credentials."""
 
     mock_user_service.login_user = AsyncMock(return_value=None)
@@ -144,9 +140,8 @@ def test_login_user_invalid_credentials(
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json()["detail"] == "Invalid email or password"
 
-def test_get_current_user_info_success(
-    client: TestClient, mock_user_service: MagicMock
-) -> None:
+
+def test_get_current_user_info_success(client: TestClient, mock_user_service: MagicMock) -> None:
     """Test accessing /me endpoint with valid JWT token."""
 
     mock_user = User(
