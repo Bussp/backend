@@ -109,9 +109,9 @@ class TestGlobalRanking:
 
         first_user = data["users"][0]
         assert "name" in first_user
-        assert "email" in first_user
+        assert "email" not in first_user
         assert "score" in first_user
-        assert first_user["email"] == "first@example.com"
+        assert first_user["score"] == 1000
 
     @pytest.mark.asyncio
     async def test_get_global_ranking_with_single_user(
@@ -134,8 +134,8 @@ class TestGlobalRanking:
         data = response.json()
 
         assert len(data["users"]) == 2
-        assert data["users"][0]["email"] == "solo@example.com"
         assert data["users"][0]["score"] == 500
+        assert "email" not in data["users"][0]
 
     @pytest.mark.asyncio
     async def test_get_global_ranking_without_auth_fails(

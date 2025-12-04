@@ -12,7 +12,7 @@ from ...adapters.repositories.user_repository_adapter import UserRepositoryAdapt
 from ...core.models.user import User
 from ...core.services.score_service import ScoreService
 from ..auth import get_current_user
-from ..mappers import map_user_domain_list_to_response
+from ..mappers import map_user_domain_list_to_ranking_response
 from ..schemas import GlobalRankingResponse, UserRankingResponse
 
 router = APIRouter(prefix="/rank", tags=["ranking"])
@@ -64,9 +64,9 @@ async def get_global_ranking(
         score_service: Injected score service
 
     Returns:
-        List of all users ordered by score
+        List of all users ordered by score (names and scores only, no emails)
     """
     users = await score_service.get_global_ranking()
-    user_responses = map_user_domain_list_to_response(users)
+    global_ranking_user_responses = map_user_domain_list_to_ranking_response(users)
 
-    return GlobalRankingResponse(users=user_responses)
+    return GlobalRankingResponse(users=global_ranking_user_responses)

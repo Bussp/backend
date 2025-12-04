@@ -159,7 +159,9 @@ class RouteShapeResponse(BaseModel):
 
     route: RouteIdentifierSchema = Field(..., description="Route identifier")
     shape_id: str = Field(..., description="GTFS shape identifier")
-    points: list[CoordinateSchema] = Field(..., description="Ordered list of coordinates")
+    points: list[CoordinateSchema] = Field(
+        ..., description="Ordered list of coordinates"
+    )
 
 
 class RouteShapesRequest(BaseModel):
@@ -179,6 +181,15 @@ class RouteShapesResponse(BaseModel):
 # ===== Ranking Schemas =====
 
 
+class RankingUserResponse(BaseModel):
+    """Response schema for user information in rankings (excludes email)."""
+
+    name: str
+    score: int
+
+    model_config = {"from_attributes": True}
+
+
 class UserRankingResponse(BaseModel):
     position: int = Field(..., description="User's rank position")
 
@@ -186,7 +197,7 @@ class UserRankingResponse(BaseModel):
 class GlobalRankingResponse(BaseModel):
     """Response schema for global ranking."""
 
-    users: list[UserResponse] = Field(..., description="List of users by rank")
+    users: list[RankingUserResponse] = Field(..., description="List of users by rank")
 
 
 # ===== History Schemas =====
