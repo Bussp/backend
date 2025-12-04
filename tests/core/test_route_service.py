@@ -1,10 +1,3 @@
-"""Tests for RouteService.
-
-This file contains two groups of tests:
-- async tests that exercise the bus provider (authenticate, get_bus_positions, get_route_details)
-- sync tests that exercise get_route_shape delegating to a GTFS repository
-"""
-
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -157,7 +150,6 @@ async def test_get_route_details_propagates_exception_from_authenticate() -> Non
 
 
 def test_get_route_shape_found() -> None:
-    """Test getting a route shape when it exists."""
     # Arrange
     bus_provider = create_autospec(BusProviderPort, instance=True)
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
@@ -196,7 +188,6 @@ def test_get_route_shape_found() -> None:
 
 
 def test_get_route_shape_not_found() -> None:
-    """Test getting a route shape when it doesn't exist."""
     # Arrange
     bus_provider = create_autospec(BusProviderPort, instance=True)
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
@@ -214,7 +205,6 @@ def test_get_route_shape_not_found() -> None:
 
 
 def test_get_route_shape_with_many_points() -> None:
-    """Test getting a route shape with many coordinate points."""
     # Arrange
     bus_provider = create_autospec(BusProviderPort, instance=True)
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
@@ -247,7 +237,6 @@ def test_get_route_shape_with_many_points() -> None:
 
 
 def test_get_route_shape_with_special_characters() -> None:
-    """Test getting a route shape with special characters in route ID."""
     # Arrange
     bus_provider = create_autospec(BusProviderPort, instance=True)
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)
@@ -278,7 +267,6 @@ def test_get_route_shape_with_special_characters() -> None:
 
 
 def test_get_route_shape_independent_of_bus_provider() -> None:
-    """Test that get_route_shape doesn't interact with bus provider."""
     # Arrange
     bus_provider = create_autospec(BusProviderPort, instance=True)
     gtfs_repo = create_autospec(GTFSRepositoryPort, instance=True)

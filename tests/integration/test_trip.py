@@ -221,3 +221,40 @@ class TestCreateTrip:
         result = await test_db.execute(select(TripDB).where(TripDB.email == user_data["email"]))
         trip = result.scalar_one_or_none()
         assert trip is None
+
+    @pytest.mark.asyncio
+    async def test_create_trip_stores_route_identifier(
+        self,
+        client: AsyncClient,
+        test_db: AsyncSession,
+    ) -> None:
+        user_data = {
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "securepassword123",
+        }
+        auth = await create_user_and_login(client, user_data)
+
+        trip_data = CreateTripRequest(
+            route=RouteIdentifierSchema(
+                bus_line="8000",
+                bus_direction=2,
+            ),
+            distance=5000,
+            data=datetime.now(UTC),
+        )
+
+        response = await client.post(
+            "/trips/",
+            json=trip_data.model_dump(mode="json"),
+            headers=auth["headers"],
+        )
+
+        assert response.status_code == 201
+
+        result = await test_db.execute(select(TripDB).where(TripDB.email == user_data["email"]))
+        trip = result.scalar_one_or_none()
+
+        assert trip is not None
+        assert trip.bus_line == "8000"
+        assert trip.bus_direction == 2

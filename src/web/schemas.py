@@ -162,6 +162,7 @@ class GlobalRankingResponse(BaseModel):
 class TripHistoryEntry(BaseModel):
     date: datetime = Field(..., description="Trip date and time")
     score: int = Field(..., description="Points earned from this trip")
+    route: RouteIdentifierSchema = Field(..., description="Route identifier")
 
 
 class HistoryResponse(BaseModel):

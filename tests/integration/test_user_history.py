@@ -130,3 +130,41 @@ class TestUserHistory:
         assert trip_date.year == 2025
         assert trip_date.month == 6
         assert trip_date.day == 15
+
+    @pytest.mark.asyncio
+    async def test_get_history_includes_route_identifier(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        user_data = {
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "securepassword123",
+        }
+
+        auth = await create_user_and_login(client, user_data)
+
+        bus_line = "8000"
+        bus_direction = 2
+        trip_request = CreateTripRequest(
+            route=RouteIdentifierSchema(bus_line=bus_line, bus_direction=bus_direction),
+            distance=5000,
+            data=datetime(2025, 6, 15, 10, 30, 0, tzinfo=UTC),
+        )
+        await client.post(
+            "/trips/",
+            json=trip_request.model_dump(mode="json"),
+            headers=auth["headers"],
+        )
+
+        response = await client.get(
+            "/history/",
+            headers=auth["headers"],
+        )
+
+        assert response.status_code == 200
+        history_response = HistoryResponse.model_validate(response.json())
+
+        assert len(history_response.trips) == 1
+        assert history_response.trips[0].route.bus_line == bus_line
+        assert history_response.trips[0].route.bus_direction == bus_direction
