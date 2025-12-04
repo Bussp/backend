@@ -5,7 +5,6 @@ from httpx import AsyncClient
 
 from src.web.schemas import (
     CreateTripRequest,
-    HistoryRequest,
     HistoryResponse,
     RouteIdentifierSchema,
 )
@@ -35,7 +34,6 @@ class TestUserHistory:
         scores: list[int] = []
         for i, trip_date in enumerate(trip_dates):
             trip_request = CreateTripRequest(
-                email=user_data["email"],
                 route=RouteIdentifierSchema(bus_line=f"800{i}", bus_direction=1),
                 distance=(i + 1) * 1000,
                 data=trip_date,
@@ -47,10 +45,8 @@ class TestUserHistory:
             )
             scores.append(response.json()["score"])
 
-        history_request = HistoryRequest(email=user_data["email"])
-        response = await client.post(
+        response = await client.get(
             "/history/",
-            json=history_request.model_dump(),
             headers=auth["headers"],
         )
 
@@ -78,11 +74,8 @@ class TestUserHistory:
 
         auth = await create_user_and_login(client, user_data)
 
-        history_request = HistoryRequest(email=user_data["email"])
-
-        response = await client.post(
+        response = await client.get(
             "/history/",
-            json=history_request.model_dump(),
             headers=auth["headers"],
         )
 
@@ -96,8 +89,7 @@ class TestUserHistory:
         self,
         client: AsyncClient,
     ) -> None:
-        history_request = HistoryRequest(email="test@example.com")
-        response = await client.post("/history/", json=history_request.model_dump())
+        response = await client.get("/history/")
 
         assert response.status_code == 401
 
@@ -116,7 +108,6 @@ class TestUserHistory:
 
         specific_date: datetime = datetime(2025, 6, 15, 10, 30, 0, tzinfo=UTC)
         trip_request = CreateTripRequest(
-            email=user_data["email"],
             route=RouteIdentifierSchema(bus_line="8000", bus_direction=1),
             distance=1000,
             data=specific_date,
@@ -127,10 +118,8 @@ class TestUserHistory:
             headers=auth["headers"],
         )
 
-        history_request = HistoryRequest(email=user_data["email"])
-        response = await client.post(
+        response = await client.get(
             "/history/",
-            json=history_request.model_dump(),
             headers=auth["headers"],
         )
 

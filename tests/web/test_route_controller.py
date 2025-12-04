@@ -9,8 +9,10 @@ from fastapi.testclient import TestClient
 
 from src.core.models.bus import BusPosition, BusRoute, RouteIdentifier
 from src.core.models.coordinate import Coordinate
+from src.core.models.user import User
 from src.core.services.route_service import RouteService
 from src.main import app
+from src.web.auth import get_current_user
 from src.web.controllers.route_controller import get_route_service
 
 
@@ -26,20 +28,23 @@ def mock_service() -> RouteService:
     mas com métodos assíncronos (AsyncMock).
     """
     service = AsyncMock(spec=RouteService)
-    # Cast to RouteService to satisfy type checker
     typed_service: RouteService = service
-    # Set up return values with proper types - these are AsyncMock instances
     typed_service.get_route_details = AsyncMock()  # type: ignore[method-assign]
     typed_service.get_bus_positions = AsyncMock()  # type: ignore[method-assign]
     return typed_service
 
 
+@pytest.fixture
+def mock_current_user() -> User:
+    return User(name="Test User", email="test@example.com", score=0)
+
+
 @pytest.fixture(autouse=True)
-def override_dependency(mock_service: RouteService) -> Generator[None, None, None]:
-    """
-    Override da dependência get_route_service para usar o mock.
-    """
+def override_dependency(
+    mock_service: RouteService, mock_current_user: User
+) -> Generator[None, None, None]:
     app.dependency_overrides[get_route_service] = lambda: mock_service
+    app.dependency_overrides[get_current_user] = lambda: mock_current_user
     yield
     app.dependency_overrides.clear()
 

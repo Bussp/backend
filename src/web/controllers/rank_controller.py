@@ -11,13 +11,11 @@ from ...adapters.database.connection import get_db
 from ...adapters.repositories.user_repository_adapter import UserRepositoryAdapter
 from ...core.models.user import User
 from ...core.services.score_service import ScoreService
+from ..auth import get_current_user
 from ..mappers import map_user_domain_list_to_response
-from ..schemas import GlobalRankingResponse, UserRankingRequest, UserRankingResponse
+from ..schemas import GlobalRankingResponse, UserRankingResponse
 
 router = APIRouter(prefix="/rank", tags=["ranking"])
-
-# Import get_current_user from user_controller to avoid circular imports
-from .user_controller import get_current_user  # noqa: E402
 
 
 def get_score_service(db: AsyncSession = Depends(get_db)) -> ScoreService:
@@ -34,27 +32,14 @@ def get_score_service(db: AsyncSession = Depends(get_db)) -> ScoreService:
     return ScoreService(user_repo)
 
 
-@router.post("/user", response_model=UserRankingResponse)
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
+@router.get("/user", response_model=UserRankingResponse)
 async def get_user_ranking(
-    request: UserRankingRequest,
     score_service: ScoreService = Depends(get_score_service),
     current_user: User = Depends(get_current_user),
 ) -> UserRankingResponse:
-    """
-    Get a user's position in the global ranking.
-
-    Args:
-        request: Request with user email
-        score_service: Injected score service
-        current_user: Authenticated user (from JWT token)
-
-    Returns:
-        User's rank position
-
-    Raises:
-        HTTPException: If user not found
-    """
-    position = await score_service.get_user_ranking(request.email)
+    position = await score_service.get_user_ranking(current_user.email)
 
     if position is None:
         raise HTTPException(
@@ -65,9 +50,12 @@ async def get_user_ranking(
     return UserRankingResponse(position=position)
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.get("/global", response_model=GlobalRankingResponse)
 async def get_global_ranking(
     score_service: ScoreService = Depends(get_score_service),
+    current_user: User = Depends(get_current_user),
 ) -> GlobalRankingResponse:
     """
     Get the global user ranking.

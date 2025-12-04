@@ -10,7 +10,9 @@ from ...adapters.external.sptrans_adapter import SpTransAdapter
 from ...adapters.repositories.gtfs_repository_adapter import GTFSRepositoryAdapter
 from ...config import settings
 from ...core.models.bus import BusPosition, BusRoute, RouteIdentifier
+from ...core.models.user import User
 from ...core.services.route_service import RouteService
+from ..auth import get_current_user
 from ..mappers import (
     map_bus_position_list_to_schema,
     map_route_identifier_schema_to_domain,
@@ -44,10 +46,13 @@ def get_route_service() -> RouteService:
     return RouteService(bus_provider, gtfs_repository)
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.post("/details", response_model=BusRoutesDetailsResponse)
 async def get_route_details_endpoint(
     request: BusRoutesDetailsRequest,
     route_service: RouteService = Depends(get_route_service),
+    current_user: User = Depends(get_current_user),
 ) -> BusRoutesDetailsResponse:
     """
     Resolve, para cada linha solicitada, as rotas concretas do provedor
@@ -93,10 +98,13 @@ async def get_route_details_endpoint(
         ) from e
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.post("/positions", response_model=BusPositionsResponse)
 async def get_bus_positions(
     request: BusPositionsRequest,
     route_service: RouteService = Depends(get_route_service),
+    current_user: User = Depends(get_current_user),
 ) -> BusPositionsResponse:
     """
     Recupera as posições dos ônibus para as rotas já resolvidas.
@@ -134,10 +142,13 @@ async def get_bus_positions(
         ) from e
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.get("/shape/{route_id}", response_model=RouteShapeResponse)
 async def get_route_shape(
     route_id: str,
     route_service: RouteService = Depends(get_route_service),
+    current_user: User = Depends(get_current_user),
 ) -> RouteShapeResponse:
     """
     Get the geographic shape (coordinates) of a route from GTFS data.

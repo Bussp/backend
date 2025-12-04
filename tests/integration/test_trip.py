@@ -26,7 +26,6 @@ class TestCreateTrip:
         auth = await create_user_and_login(client, user_data)
 
         trip_data = CreateTripRequest(
-            email=user_data["email"],
             route=RouteIdentifierSchema(
                 bus_line="8000",
                 bus_direction=1,
@@ -69,7 +68,6 @@ class TestCreateTrip:
         auth = await create_user_and_login(client, user_data)
 
         trip_data = CreateTripRequest(
-            email=user_data["email"],
             route=RouteIdentifierSchema(
                 bus_line="8000",
                 bus_direction=1,
@@ -78,7 +76,6 @@ class TestCreateTrip:
             data=datetime.now(UTC),
         )
         second_trip_data = CreateTripRequest(
-            email=user_data["email"],
             route=RouteIdentifierSchema(
                 bus_line="8000",
                 bus_direction=1,
@@ -114,13 +111,7 @@ class TestCreateTrip:
         self,
         client: AsyncClient,
     ) -> None:
-        user_data = {
-            "name": "Test User",
-            "email": "test@example.com",
-            "password": "securepassword123",
-        }
         trip_data = CreateTripRequest(
-            email=user_data["email"],
             route=RouteIdentifierSchema(
                 bus_line="8000",
                 bus_direction=1,
@@ -146,7 +137,6 @@ class TestCreateTrip:
         auth = await create_user_and_login(client, user_data)
 
         trip_data = CreateTripRequest(
-            email=user_data["email"],
             route=RouteIdentifierSchema(
                 bus_line="9000",
                 bus_direction=2,
@@ -177,9 +167,7 @@ class TestCreateTrip:
         }
         auth = await create_user_and_login(client, user_data)
 
-        # Use raw dict to bypass Pydantic validation and test API validation
         trip_data = {
-            "email": user_data["email"],
             "route": {
                 "bus_line": "8000",
                 "bus_direction": 1,
@@ -213,9 +201,7 @@ class TestCreateTrip:
         }
         auth = await create_user_and_login(client, user_data)
 
-        # Use raw dict to bypass Pydantic validation and test API validation
         trip_data = {
-            "email": user_data["email"],
             "route": {
                 "bus_line": "8000",
                 "bus_direction": 3,

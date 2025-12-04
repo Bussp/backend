@@ -12,12 +12,10 @@ from ...adapters.repositories.trip_repository_adapter import TripRepositoryAdapt
 from ...adapters.repositories.user_repository_adapter import UserRepositoryAdapter
 from ...core.models.user import User
 from ...core.services.trip_service import TripService
+from ..auth import get_current_user
 from ..schemas import CreateTripRequest, CreateTripResponse
 
 router = APIRouter(prefix="/trips", tags=["trips"])
-
-# Import get_current_user from user_controller to avoid circular imports
-from .user_controller import get_current_user  # noqa: E402
 
 
 def get_trip_service(db: AsyncSession = Depends(get_db)) -> TripService:
@@ -35,6 +33,8 @@ def get_trip_service(db: AsyncSession = Depends(get_db)) -> TripService:
     return TripService(trip_repo, user_repo)
 
 
+# NOTE: Having `current_user: User = Depends(get_current_user)` as a dependency
+# makes this endpoint only accessible to authenticated users (requires valid JWT token).
 @router.post("/", response_model=CreateTripResponse, status_code=status.HTTP_201_CREATED)
 async def create_trip(
     request: CreateTripRequest,
@@ -57,7 +57,7 @@ async def create_trip(
     """
     try:
         trip = await trip_service.create_trip(
-            email=request.email,
+            email=current_user.email,
             bus_line=request.route.bus_line,
             bus_direction=request.route.bus_direction,
             distance=request.distance,
