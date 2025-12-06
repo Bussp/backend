@@ -11,6 +11,10 @@ from src.core.ports.user_repository import UserRepository
 from src.core.services.trip_service import TripService
 
 
+def calculate_expected_score(distance: int) -> float:
+    return round(distance * 0.077)
+
+
 @pytest.mark.asyncio
 async def test_create_trip_no_user() -> None:
     user_repo = create_autospec(UserRepository, instance=True)
@@ -48,7 +52,7 @@ async def test_create_trip_single_user() -> None:
     service = TripService(trip_repo, user_repo)
 
     distance = 1500
-    expected_score = (distance // 1000) * 77
+    expected_score = calculate_expected_score(distance)
 
     trip = await service.create_trip(
         email="user@example.com",
@@ -87,9 +91,9 @@ async def test_create_trip_zero_distance() -> None:
     )
 
     assert isinstance(trip, Trip)
-    assert trip.score == 0
+    assert trip.score == 0.0
     assert trip.route.bus_line == "0000"
-    user_repo.add_user_score.assert_awaited_once_with("zero@example.com", 0)
+    user_repo.add_user_score.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -137,7 +141,7 @@ async def test_create_trip_very_large_distance() -> None:
         trip_datetime=datetime(2025, 11, 15, 12, 0, 0),
     )
 
-    expected_score = (big_distance // 1000) * 77
+    expected_score = calculate_expected_score(big_distance)
     assert trip.score == expected_score
     assert trip.route.bus_line == "BIG"
     user_repo.add_user_score.assert_awaited_once_with("big@example.com", expected_score)

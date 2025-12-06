@@ -62,7 +62,7 @@ class TripService:
         if distance < 0:
             raise ValueError("distance must be non-negative")
 
-        score = (distance // 1000) * 77
+        score = round(distance * 0.077)
 
         trip = Trip(
             email=email,

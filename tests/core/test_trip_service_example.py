@@ -14,6 +14,10 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
+def calculate_expected_score(distance: int) -> float:
+    return round(distance * 0.077)
+
+
 @pytest.mark.asyncio
 async def test_create_trip_calculates_score_correctly() -> None:
     user_repo = create_autospec(UserRepository, instance=True)
@@ -40,7 +44,7 @@ async def test_create_trip_calculates_score_correctly() -> None:
         trip_datetime=datetime(2025, 10, 16, 10, 0, 0),
     )
 
-    expected_score = (distance // 1000) * 77
+    expected_score = 77.0
     assert trip.score == expected_score
     assert trip.email == "test@example.com"
     assert trip.route.bus_line == "8000"
@@ -105,14 +109,14 @@ async def test_multiple_trips(mocker: "MockerFixture") -> None:
         trip_datetime=datetime.now(),
     )
 
-    assert trip1.score == 0
+    assert trip1.score == calculate_expected_score(trip1.distance)
     assert trip1.route.bus_line == "8000"
-    assert trip2.score == 77
+    assert trip2.score == calculate_expected_score(trip2.distance)
     assert trip2.route.bus_direction == 2
     assert trip_repo.save_trip.await_count == 2
     assert user_repo.add_user_score.await_count == 2
-    user_repo.add_user_score.assert_any_await("bob@example.com", 0)
-    user_repo.add_user_score.assert_any_await("bob@example.com", 77)
+    user_repo.add_user_score.assert_any_await("bob@example.com", trip1.score)
+    user_repo.add_user_score.assert_any_await("bob@example.com", trip2.score)
 
 
 @pytest.mark.asyncio

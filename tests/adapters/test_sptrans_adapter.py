@@ -1,17 +1,9 @@
-import os
-
 import pytest
 
 from src.adapters.external.sptrans_adapter import SpTransAdapter
 from src.core.models.bus import BusPosition, BusRoute
 
-skip_if_no_token = pytest.mark.skipif(
-    not os.getenv("SPTRANS_API_TOKEN"),
-    reason="SPTRANS_API_TOKEN not set - skipping integration test",
-)
 
-
-@skip_if_no_token
 @pytest.mark.asyncio
 async def test_automatic_authentication() -> None:
     """
@@ -25,7 +17,6 @@ async def test_automatic_authentication() -> None:
     assert len(routes) > 0
 
 
-@skip_if_no_token
 @pytest.mark.asyncio
 async def test_search_routes_number() -> None:
     """
@@ -44,7 +35,6 @@ async def test_search_routes_number() -> None:
         assert "8075" in bus_route.route.bus_line
 
 
-@skip_if_no_token
 @pytest.mark.asyncio
 async def test_search_routes_by_destination() -> None:
     """
@@ -58,7 +48,6 @@ async def test_search_routes_by_destination() -> None:
     assert len(bus_routes) > 0, "Nenhuma rota retornada para Lapa"
 
 
-@skip_if_no_token
 @pytest.mark.asyncio
 async def test_get_bus_positions() -> None:
     """
@@ -84,7 +73,6 @@ async def test_get_bus_positions() -> None:
         assert isinstance(pos.position.longitude, float | int)
 
 
-@skip_if_no_token
 @pytest.mark.asyncio
 async def test_search_routes_returns_empty_for_unknown() -> None:
     """
