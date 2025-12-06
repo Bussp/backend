@@ -14,6 +14,7 @@ from src.core.services.trip_service import TripService
 def calculate_expected_score(distance: int) -> float:
     return round(distance * 0.077)
 
+
 @pytest.mark.asyncio
 async def test_create_trip_no_user() -> None:
     user_repo = create_autospec(UserRepository, instance=True)

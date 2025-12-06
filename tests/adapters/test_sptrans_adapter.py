@@ -1,4 +1,3 @@
-
 import pytest
 
 from src.adapters.external.sptrans_adapter import SpTransAdapter
