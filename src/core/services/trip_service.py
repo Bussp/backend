@@ -72,6 +72,9 @@ class TripService:
             trip_datetime=trip_datetime,
         )
 
+        if distance == 0:
+            return trip
+
         saved_trip = await self.trip_repository.save_trip(trip)
 
         await self.user_repository.add_user_score(email, score)
