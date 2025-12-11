@@ -18,7 +18,7 @@ Este projeto implementa um sistema gamificado onde usuários ganham pontos ao us
 
 ### Pré-requisitos
 
-- Python 3.12 ou superior
+- Python 3.12 
 - pip (gerenciador de pacotes Python)
 - Git
 
