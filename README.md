@@ -2,7 +2,7 @@
 
 Sistema de rastreamento de ônibus com gamificação, desenvolvido em **Python** usando **FastAPI** e **Arquitetura Hexagonal**.
 
-## 📖 Sobre o Projeto
+## Sobre o Projeto
 
 Este projeto implementa um sistema gamificado onde usuários ganham pontos ao usar transporte público. A aplicação usa Arquitetura Hexagonal (Portas e Adaptadores) para manter a lógica de negócio isolada e testável.
 
@@ -14,7 +14,7 @@ Este projeto implementa um sistema gamificado onde usuários ganham pontos ao us
 - MyPy (tipagem estática)
 - Ruff (linting e formatação)
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Pré-requisitos
 
@@ -89,7 +89,7 @@ Este projeto implementa um sistema gamificado onde usuários ganham pontos ao us
 
 > **Nota**: As tabelas do banco de dados são criadas automaticamente na inicialização.
 
-## 🛠️ Desenvolvimento
+## Desenvolvimento
 
 ### Testes
 ```bash
@@ -108,7 +108,7 @@ ruff check --fix src/ tests/  # Lint e correções automáticas
 ruff format src/ tests/       # Formatação
 ```
 
-## 📚 Documentação
+## Documentação
 
 ### Guias Completos
 - [**Arquitetura**](docs/ARQUITETURA.md) - Arquitetura Hexagonal, camadas, responsabilidades e princípios
@@ -119,9 +119,9 @@ ruff format src/ tests/       # Formatação
 ### Estrutura do Projeto
 ```
 src/
-├── core/              # 🎯 Lógica de negócio (models, services, ports)
-├── web/               # 🌐 Apresentação (controllers, schemas)
-└── adapters/          # 🔌 Infraestrutura (database, repositories, external)
+├── core/              # Lógica de negócio (models, services, ports)
+├── web/               # Apresentação (controllers, schemas)
+└── adapters/          # Infraestrutura (database, repositories, external)
 ```
 
 Consulte o [**Guia de Arquitetura**](docs/ARQUITETURA.md) para detalhes completos sobre a estrutura e responsabilidades de cada camada.
