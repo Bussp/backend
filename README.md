@@ -18,52 +18,74 @@ Este projeto implementa um sistema gamificado onde usuários ganham pontos ao us
 
 ### Pré-requisitos
 
-- Python 3.12
-- pip
+- Python 3.12 ou superior
+- pip (gerenciador de pacotes Python)
+- Git
 
-### Instalação e Execução com docker
+### Instalação e Execução com Docker
+
 1. **Clone o repositório**:
    ```bash
-   cd /home/kim/code/estudos/bussp
+   git clone https://github.com/Bussp/backend.git
+   cd backend
    ```
 
-2. **Execute**:
+2. **Construa a imagem Docker**:
+   ```bash
+   docker build -t backend .
+   ```
+
+3. **Execute o container**:
    ```bash
    docker run -d -p 127.0.0.1:8000:8000 backend
    ```
 
-3. **Acesse a API**:
+4. **Acesse a API**:
    - API: http://localhost:8000
-   - Documentação interativa: http://localhost:8000/docs
-   - Documentação alternativa: http://localhost:8000/redoc
+   - Documentação interativa (Swagger): http://localhost:8000/docs
+   - Documentação alternativa (ReDoc): http://localhost:8000/redoc
 
-4. **Para matar o container**:
-   Pegue o id do container em `CONTAINER ID`
+5. **Para parar e remover o container**:
+   
+   Primeiro, pegue o ID do container:
    ```bash
    docker ps
    ```
-   ```bash
-   CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+   
+   Você verá algo como:
    ```
-   Execute:
+   CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+   abc123def456   backend   ...       ...       ...       ...       ...
+   ```
+   
+   Então execute:
    ```bash
-   docker stop ${id}
-   docker rm ${id}
+   docker stop abc123def456
+   docker rm abc123def456
    ```
 
-### Instalação e Execução
+### Instalação e Execução sem Docker
 
 1. **Clone o repositório**:
    ```bash
-   cd bussp
+   git clone https://github.com/Bussp/backend.git
+   cd backend
    ```
 
 2. **Crie um ambiente virtual**:
    ```bash
-   python3.12 -m venv venv # comando antigo: python -m venv venv
-
-   source venv/bin/activate  # No Windows: venv\Scripts\activate
+   python3.12 -m venv venv
    ```
+   
+   Ative o ambiente virtual:
+   - Linux/Mac:
+     ```bash
+     source venv/bin/activate
+     ```
+   - Windows:
+     ```bash
+     venv\Scripts\activate
+     ```
 
 3. **Instale as dependências**:
    ```bash
@@ -71,21 +93,82 @@ Este projeto implementa um sistema gamificado onde usuários ganham pontos ao us
    ```
 
 4. **Configure as variáveis de ambiente**:
+   
+   Copie o arquivo de exemplo:
    ```bash
    cp .env.example .env
-   # Edite .env e adicione seu token da API SPTrans
-   # Obtenha em: https://www.sptrans.com.br/desenvolvedores/
+   ```
+   
+   Edite o arquivo `.env` e configure as seguintes variáveis:
+   
+   **Variáveis obrigatórias:**
+   
+   - `SPTRANS_API_TOKEN`: Token de acesso à API da SPTrans
+     - **Como obter**: Acesse https://www.sptrans.com.br/desenvolvedores/
+     - Faça cadastro e solicite um token de desenvolvedor
+     - Substitua `your_api_token_here` pelo token recebido
+     - Exemplo: `SPTRANS_API_TOKEN=abc123def456ghi789`
+   
+   **Variáveis opcionais (já vêm com valores padrão):**
+   
+   - `DATABASE_URL`: URL de conexão com o banco de dados
+     - Padrão: `sqlite+aiosqlite:///./bussp.db` (SQLite local)
+     - Para PostgreSQL (produção): `postgresql+asyncpg://usuario:senha@localhost:5432/bussp`
+   
+   - `DEBUG`: Modo de depuração
+     - Padrão: `true`
+     - Em produção, altere para `false`
+   
+   - `HOST` e `PORT`: Endereço e porta do servidor
+     - Padrão: `0.0.0.0:8000`
+     - Mantenha os valores padrão para desenvolvimento local
+   
+   - `AUTH_DISABLED`: Desabilitar autenticação (apenas para testes)
+     - Padrão: `false`
+     - Deixe como `false` em produção
+   
+   - `DEFAULT_USER_EMAIL` e `DEFAULT_USER_NAME`: Usuário padrão para testes
+     - Usado apenas quando `AUTH_DISABLED=true`
+     - Pode manter os valores padrão ou personalizar
+   
+   **Exemplo de arquivo `.env` configurado:**
+   ```env
+   DEBUG=true
+   APP_NAME="BusSP - Gamified Public Transport Tracker"
+   
+   DATABASE_URL=sqlite+aiosqlite:///./bussp.db
+   
+   SPTRANS_API_TOKEN=seu_token_aqui_obtido_no_site_da_sptrans
+   SPTRANS_BASE_URL=http://api.olhovivo.sptrans.com.br/v2.1
+   
+   HOST=0.0.0.0
+   PORT=8000
+   
+   AUTH_DISABLED=false
+   DEFAULT_USER_EMAIL="seu_email@exemplo.com"
+   DEFAULT_USER_NAME="Seu Nome"
    ```
 
 5. **Inicie o servidor**:
    ```bash
    python -m src.main
    ```
+   
+   Você verá algo como:
+   ```
+   INFO:     Started server process [12345]
+   INFO:     Waiting for application startup.
+   INFO:     Application startup complete.
+   INFO:     Uvicorn running on http://0.0.0.0:8000
+   ```
 
 6. **Acesse a API**:
    - API: http://localhost:8000
-   - Documentação interativa: http://localhost:8000/docs
-   - Documentação alternativa: http://localhost:8000/redoc
+   - Documentação interativa (Swagger): http://localhost:8000/docs
+   - Documentação alternativa (ReDoc): http://localhost:8000/redoc
+
+7. **Para parar o servidor**:
+   - Pressione `Ctrl + C` no terminal
 
 > **Nota**: As tabelas do banco de dados são criadas automaticamente na inicialização.
 
@@ -110,12 +193,6 @@ ruff format src/ tests/       # Formatação
 
 ## Documentação
 
-### Guias Completos
-- [**Arquitetura**](docs/ARQUITETURA.md) - Arquitetura Hexagonal, camadas, responsabilidades e princípios
-- [**Testes**](docs/TESTES.md) - Como escrever testes com mocks, padrão AAA, boas práticas
-- [**Tipagem Estática**](docs/TIPAGEM.md) - Type hints, MyPy, erros comuns e soluções
-- [**Linting**](docs/LINTING.md) - Ruff, qualidade de código, formatação automática
-
 ### Estrutura do Projeto
 ```
 src/
@@ -124,4 +201,4 @@ src/
 └── adapters/          # Infraestrutura (database, repositories, external)
 ```
 
-Consulte o [**Guia de Arquitetura**](docs/ARQUITETURA.md) para detalhes completos sobre a estrutura e responsabilidades de cada camada.
+Consulte o [**Guia de Arquitetura**](docs/ARQUITETURA.md) e [**Diagrama da Arquitetura**](docs/arquitetura.pdf) para detalhes completos sobre a estrutura e responsabilidades de cada camada.

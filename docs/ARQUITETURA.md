@@ -1,4 +1,4 @@
-# 🏗️ Arquitetura do BusSP
+#  Arquitetura do BusSP
 
 ## Visão Geral
 
@@ -54,17 +54,17 @@ Isso garante que a lógica de negócio permaneça pura e independente de framewo
 
 ```
 src/
-├── core/              # 🎯 Camada Core - Lógica de Negócio
+├── core/              # Camada Core - Lógica de Negócio
 │   ├── models/        # Entidades de domínio
 │   ├── ports/         # Interfaces (contratos)
 │   └── services/      # Lógica de negócio
 │
-├── web/               # 🌐 Camada Web - Apresentação
+├── web/               # Camada Web - Apresentação
 │   ├── controllers/   # Endpoints da API
 │   ├── schemas.py     # Modelos Pydantic
 │   └── mappers.py     # Conversão API ↔ Domínio
 │
-└── adapters/          # 🔌 Camada Adapters - Infraestrutura
+└── adapters/          # Camada Adapters - Infraestrutura
     ├── database/      # Persistência
     ├── repositories/  # Implementação de portas
     └── external/      # APIs externas
@@ -72,7 +72,7 @@ src/
 
 ## Responsabilidades das Camadas
 
-### 🎯 Camada Core (`src/core/`)
+###  Camada Core (`src/core/`)
 
 O **coração** da aplicação contendo lógica de negócio pura.
 
@@ -161,15 +161,15 @@ class TripService:
         distance: int,
         trip_datetime: datetime,
     ) -> Trip:
-        # 1. Validar usuário existe
+        
         user = await self._user_repo.get_user(email)
         if user is None:
             raise ValueError(f"User {email} not found")
         
-        # 2. Calcular pontuação (lógica de negócio)
+        
         score = distance // 100
         
-        # 3. Criar viagem
+        
         trip = Trip(
             email=email,
             bus_line=bus_line,
@@ -177,10 +177,10 @@ class TripService:
             trip_datetime=trip_datetime,
         )
         
-        # 4. Salvar viagem
+        
         saved_trip = await self._trip_repo.save_trip(trip)
         
-        # 5. Atualizar score do usuário
+        
         await self._user_repo.add_user_score(email, score)
         
         return saved_trip
@@ -188,7 +188,7 @@ class TripService:
 
 **Princípio Chave**: Sem importações de frameworks web, bancos de dados ou bibliotecas externas. Apenas biblioteca padrão do Python e lógica de domínio.
 
-### 🌐 Camada Web (`src/web/`)
+###  Camada Web (`src/web/`)
 
 Trata requisições e respostas HTTP.
 
@@ -217,7 +217,7 @@ async def create_trip(
     request: CreateTripRequest,
     trip_service: TripService = Depends(get_trip_service),
 ) -> TripResponse:
-    # 1. Chamar serviço (lógica está no core)
+    
     trip = await trip_service.create_trip(
         email=request.email,
         bus_line=request.bus_line,
@@ -225,7 +225,7 @@ async def create_trip(
         trip_datetime=request.trip_datetime,
     )
     
-    # 2. Mapear domínio → API schema
+    
     return TripResponse.from_domain(trip)
 ```
 
@@ -276,7 +276,7 @@ def trip_response_from_domain(trip: Trip) -> TripResponse:
 
 **Princípio Chave**: Controllers são finos. Eles delegam toda lógica de negócio aos serviços do core.
 
-### 🔌 Camada Adapters (`src/adapters/`)
+### Camada Adapters (`src/adapters/`)
 
 Implementa aspectos de infraestrutura.
 
